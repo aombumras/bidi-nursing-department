@@ -16,44 +16,50 @@
     body.is-admin .admin-only { display: inline-flex; }
     .admin-block { display: none; }
     body.is-admin .admin-block { display: block; }
+    #initial-loader { transition: opacity 0.35s ease, visibility 0.35s ease; }
+    #initial-loader.fade-out { opacity: 0; visibility: hidden; pointer-events: none; }
   </style>
 </head>
 <body class="antialiased">
 
-  <!-- แถบสถานะการซิงค์ข้อมูลจาก Google Sheets -->
-  <div id="sync-banner" class="hidden bg-[#0f294a] text-sky-200 text-xs text-center py-1.5 px-4 font-display">
-    ⏳ กำลังดึงข้อมูลล่าสุดจากฐานข้อมูลกลาง...
+  <!-- หน้าจอโหลดเริ่มต้นแบบมืออาชีพ (บังไม่ให้เห็นข้อมูลเทมเพลตระหว่างรอ Google Sheets) -->
+  <div id="initial-loader" class="fixed inset-0 z-[100] bg-gradient-to-br from-[#0f294a] via-[#163a66] to-[#0284c7] flex flex-col items-center justify-center text-white px-4">
+    <div class="w-20 h-20 rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-2xl mb-5 animate-pulse">
+      <svg viewBox="0 0 100 100" class="w-14 h-14">
+        <circle cx="50" cy="50" r="46" fill="#0f294a"/>
+        <circle cx="50" cy="50" r="41" fill="none" stroke="#38bdf8" stroke-width="2"/>
+        <path d="M50 22 L50 78 M32 50 L68 50" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+        <circle cx="50" cy="50" r="10" fill="#0284c7"/>
+        <text x="50" y="90" text-anchor="middle" fill="#fbbf24" font-size="11" font-weight="bold" font-family="sans-serif">BIDI</text>
+      </svg>
+    </div>
+    <h2 class="font-display text-lg sm:text-xl font-bold tracking-wide text-center">กลุ่มการพยาบาล สถาบันบำราศนราดูร</h2>
+    <p class="text-sky-200 text-xs sm:text-sm mt-1">BIDI Nursing Department | กรมควบคุมโรค</p>
+    <div class="w-48 h-1.5 bg-white/20 rounded-full overflow-hidden mt-5">
+      <div class="h-full bg-amber-400 rounded-full animate-[loading_1.2s_ease-in-out_infinite]" style="width: 65%;"></div>
+    </div>
   </div>
 
-  <!-- แถบเครื่องมือผู้ดูแลระบบ (แสดงเฉพาะเมื่อยืนยันตัวตนสำเร็จ เลื่อนตามหน้าจอไม่ฟิกบัง) -->
+  <!-- แถบเครื่องมือผู้ดูแลระบบ -->
   <div class="admin-block bg-amber-400 text-slate-950 px-4 py-2.5 shadow-md">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm font-display">
       <div class="font-bold flex items-center gap-1.5">
         <span class="bg-slate-900 text-amber-400 px-2 py-0.5 rounded text-[11px]">ADMIN</span>
-        <span>โหมดผู้ดูแลระบบ (แก้ไขรูปหน้าปก โลโก้ เมนู และข้อมูลได้ทันที)</span>
+        <span>โหมดผู้ดูแลระบบ</span>
       </div>
       <div class="flex flex-wrap items-center gap-2">
-        <button type="button" onclick="openMenuEditor()" class="bg-sky-700 hover:bg-sky-800 text-white px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm">
-          ⚙️ แก้ไขชื่อ/ไอคอนเมนู
-        </button>
-        <button type="button" onclick="saveAllToSheet(false)" id="btn-save-all" class="bg-slate-900 hover:bg-slate-800 text-white px-3.5 py-1.5 rounded-lg text-xs font-medium shadow-sm">
-          💾 บันทึกทั้งหมดลงชีต
-        </button>
-        <button type="button" onclick="loadFromSheetJSONP(true)" class="bg-white hover:bg-slate-100 text-slate-900 px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm">
-          🔄 ซิงค์ข้อมูลล่าสุด
-        </button>
-        <button type="button" onclick="logoutAdmin()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm">
-          ออกจากระบบ
-        </button>
+        <button type="button" onclick="openMenuEditor()" class="bg-sky-700 hover:bg-sky-800 text-white px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm">⚙️ แก้ไขชื่อ/ไอคอนเมนู</button>
+        <button type="button" onclick="saveAllToSheet(false)" id="btn-save-all" class="bg-slate-900 hover:bg-slate-800 text-white px-3.5 py-1.5 rounded-lg text-xs font-medium shadow-sm">💾 บันทึกทั้งหมดลงชีต</button>
+        <button type="button" onclick="loadFromSheetJSONP(true)" class="bg-white hover:bg-slate-100 text-slate-900 px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm">🔄 ซิงค์ข้อมูลล่าสุด</button>
+        <button type="button" onclick="logoutAdmin()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm">ออกจากระบบ</button>
       </div>
     </div>
   </div>
 
-  <!-- ส่วนหัวเว็บไซต์ (เลื่อนตามหน้าจอ Responsive สมาร์ทโฟน เมนูชิดขวามือ) -->
+  <!-- ส่วนหัวเว็บไซต์ (เลื่อนตามหน้าจอ Responsive เมนูชิดขวามือ) -->
   <header class="bg-white border-b border-slate-200 shadow-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
       <div class="flex items-center justify-between gap-3">
-        <!-- โลโก้สถาบัน (ซ่อนทางเข้าแอดมิน) + ชื่อหน่วยงาน -->
         <div class="flex items-center gap-3 min-w-0">
           <div class="relative shrink-0">
             <button type="button" onclick="onLogoClick()" title="กลุ่มการพยาบาล สถาบันบำราศนราดูร" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-sky-50 border border-sky-200 flex items-center justify-center overflow-hidden shadow-sm hover:ring-2 hover:ring-sky-400 transition focus:outline-none">
@@ -66,123 +72,89 @@
                 <text x="50" y="90" text-anchor="middle" fill="#fbbf24" font-size="11" font-weight="bold" font-family="sans-serif">BIDI</text>
               </svg>
             </button>
-            <button type="button" onclick="openSingleImg('siteLogo', 'เปลี่ยนโลโก้สถาบันบำราศนราดูร')" class="admin-only absolute -bottom-1 -right-1 w-6 h-6 bg-amber-400 hover:bg-amber-500 text-slate-900 rounded-full items-center justify-center shadow border border-white text-[11px]" title="เปลี่ยนรูปโลโก้">
-              📷
-            </button>
+            <button type="button" onclick="openSingleImg('siteLogo', 'เปลี่ยนโลโก้สถาบันบำราศนราดูร')" class="admin-only absolute -bottom-1 -right-1 w-6 h-6 bg-amber-400 hover:bg-amber-500 text-slate-900 rounded-full items-center justify-center shadow border border-white text-[11px]">📷</button>
           </div>
-
           <div class="min-w-0">
-            <h1 class="text-base sm:text-xl lg:text-2xl font-bold text-[#0f294a] truncate leading-tight">
-              กลุ่มการพยาบาล สถาบันบำราศนราดูร
-            </h1>
-            <p class="text-[11px] sm:text-xs text-sky-700 font-medium truncate mt-0.5">
-              BIDI Nursing Department | กรมควบคุมโรค กระทรวงสาธารณสุข
-            </p>
+            <h1 class="text-base sm:text-xl lg:text-2xl font-bold text-[#0f294a] truncate leading-tight">กลุ่มการพยาบาล สถาบันบำราศนราดูร</h1>
+            <p class="text-[11px] sm:text-xs text-sky-700 font-medium truncate mt-0.5">BIDI Nursing Department | กรมควบคุมโรค กระทรวงสาธารณสุข</p>
           </div>
         </div>
 
-        <!-- ปุ่มเปิดเมนู 3 ขีดบนสมาร์ทโฟน (จัดชิดขวามือ) -->
         <button type="button" onclick="toggleMobileMenu()" aria-label="เปิดเมนูนำทาง" class="lg:hidden shrink-0 inline-flex items-center justify-center p-2.5 rounded-xl bg-sky-50 text-[#0f294a] border border-sky-200 hover:bg-sky-100 transition">
-          <svg id="icon-hamburger" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
-          </svg>
-          <svg id="icon-close" class="w-6 h-6 hidden" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
+          <svg id="icon-hamburger" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          <svg id="icon-close" class="w-6 h-6 hidden" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
 
-        <!-- แถบเมนูนำทางบน PC (เรียงชิดขวามือ) -->
         <nav id="desktop-nav" class="hidden lg:flex items-center justify-end gap-1 text-sm font-display font-medium"></nav>
       </div>
 
-      <!-- เมนูดรอปดาวน์บนสมาร์ทโฟน (เรียงชิดขวามือ) -->
       <div id="mobile-menu-panel" class="hidden lg:hidden mt-3 pt-3 border-t border-slate-100">
         <nav id="mobile-nav" class="flex flex-col items-end gap-1.5 text-sm font-display font-medium"></nav>
       </div>
     </div>
   </header>
 
-  <!-- 1. แบนเนอร์หลัก (รูปหน้าปก + ข้อความประชาสัมพันธ์) -->
+  <!-- 1. แบนเนอร์หลัก -->
   <section id="home" class="bg-gradient-to-br from-[#0f294a] via-[#163a66] to-[#0284c7] text-white py-10 sm:py-16">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
       <div class="lg:col-span-7 space-y-4">
-        <span class="inline-block bg-sky-500/20 border border-sky-300/30 text-sky-200 text-xs font-display px-3 py-1 rounded-full">
-          ศูนย์ความเป็นเลิศทางการพยาบาลโรคติดเชื้อและโรคอุบัติใหม่
-        </span>
+        <span class="inline-block bg-sky-500/20 border border-sky-300/30 text-sky-200 text-xs font-display px-3 py-1 rounded-full">ศูนย์ความเป็นเลิศทางการพยาบาลโรคติดเชื้อและโรคอุบัติใหม่</span>
         <div class="flex items-start gap-2">
-          <h2 id="hero-title" class="text-2xl sm:text-4xl font-bold leading-tight">
-            มุ่งมั่นพัฒนาคุณภาพการพยาบาล สู่มาตรฐานสากลด้วยหัวใจความเป็นมนุษย์
-          </h2>
+          <h2 id="hero-title" class="text-2xl sm:text-4xl font-bold leading-tight min-h-[3rem]"></h2>
           <button type="button" onclick="editSetting('heroTitle', 'แก้ไขหัวข้อหน้าปก')" class="admin-only shrink-0 bg-amber-400 text-slate-900 p-1.5 rounded-lg text-xs shadow">✏️</button>
         </div>
         <div class="flex items-start gap-2">
-          <p id="hero-subtitle" class="text-sky-100 text-sm sm:text-lg leading-relaxed">
-            ให้บริการพยาบาลผู้ป่วยโรคติดเชื้อ โรคอุบัติใหม่ และผู้ป่วยเฉพาะทางอย่างปลอดภัย ได้มาตรฐานวิชาชีพ พร้อมขับเคลื่อนนวัตกรรมและงานวิจัยทางการพยาบาล
-          </p>
+          <p id="hero-subtitle" class="text-sky-100 text-sm sm:text-lg leading-relaxed min-h-[2.5rem]"></p>
           <button type="button" onclick="editSetting('heroSubtitle', 'แก้ไขคำโปรยหน้าปก')" class="admin-only shrink-0 bg-amber-400 text-slate-900 p-1.5 rounded-lg text-xs shadow">✏️</button>
         </div>
         <div class="pt-2 flex flex-wrap gap-3">
-          <a href="#units" class="bg-white text-[#0f294a] hover:bg-sky-50 font-display font-semibold px-5 py-2.5 rounded-xl shadow transition text-sm">
-            หน่วยงานในสังกัด
-          </a>
-          <a href="#albums" class="bg-sky-600/40 hover:bg-sky-600/60 border border-sky-300/40 text-white font-display font-medium px-5 py-2.5 rounded-xl transition text-sm">
-            ภาพกิจกรรมกลุ่มการพยาบาล
-          </a>
+          <a href="#units" class="bg-white text-[#0f294a] hover:bg-sky-50 font-display font-semibold px-5 py-2.5 rounded-xl shadow transition text-sm">หน่วยงานในสังกัด</a>
+          <a href="#albums" class="bg-sky-600/40 hover:bg-sky-600/60 border border-sky-300/40 text-white font-display font-medium px-5 py-2.5 rounded-xl transition text-sm">ภาพกิจกรรมกลุ่มการพยาบาล</a>
         </div>
       </div>
 
-      <!-- รูปหน้าปก -->
       <div class="lg:col-span-5">
-        <div class="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20 aspect-[16/10] bg-slate-800">
-          <img id="hero-img" src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=900&q=80" alt="รูปหน้าปกกลุ่มการพยาบาล" class="w-full h-full object-cover">
-          <button type="button" onclick="openSingleImg('heroImg', 'เปลี่ยนรูปหน้าปกเว็บไซต์')" class="admin-only absolute bottom-3 right-3 bg-amber-400 hover:bg-amber-500 text-slate-900 font-display font-semibold px-3.5 py-2 rounded-xl shadow text-xs items-center gap-1">
-            📷 เปลี่ยนรูปหน้าปก
-          </button>
+        <div class="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20 aspect-[16/10] bg-slate-800/60">
+          <img id="hero-img" src="" alt="รูปหน้าปกกลุ่มการพยาบาล" class="w-full h-full object-cover hidden">
+          <button type="button" onclick="openSingleImg('heroImg', 'เปลี่ยนรูปหน้าปกเว็บไซต์')" class="admin-only absolute bottom-3 right-3 bg-amber-400 hover:bg-amber-500 text-slate-900 font-display font-semibold px-3.5 py-2 rounded-xl shadow text-xs items-center gap-1">📷 เปลี่ยนรูปหน้าปก</button>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- 2. ผู้บริหารและทีมบริหารกลุ่มการพยาบาล -->
+  <!-- 2. ผู้บริหารและทีมบริหาร -->
   <section id="executives" class="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="text-center mb-8">
       <span class="text-sky-600 font-display font-semibold text-xs sm:text-sm uppercase tracking-wider">Nursing Leadership</span>
       <h2 class="text-2xl sm:text-3xl font-bold text-[#0f294a] mt-1">ผู้บริหารและทีมบริหารกลุ่มการพยาบาล</h2>
-      <p class="text-slate-600 text-sm mt-1">โครงสร้างการบริหารงานกลุ่มการพยาบาล สถาบันบำราศนราดูร</p>
     </div>
 
-    <!-- หัวหน้ากลุ่มการพยาบาล -->
     <div class="max-w-md mx-auto bg-white rounded-2xl shadow-md border border-slate-200 p-6 text-center">
-      <div class="relative w-32 h-32 mx-auto mb-4">
-        <img id="chief-img" src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=400&q=80" alt="หัวหน้ากลุ่มการพยาบาล" class="w-full h-full object-cover rounded-full border-4 border-sky-100 shadow">
+      <div class="relative w-32 h-32 mx-auto mb-4 bg-slate-100 rounded-full">
+        <img id="chief-img" src="" alt="หัวหน้ากลุ่มการพยาบาล" class="w-full h-full object-cover rounded-full border-4 border-sky-100 shadow hidden">
         <button type="button" onclick="openSingleImg('chiefImg', 'เปลี่ยนรูปหัวหน้ากลุ่มการพยาบาล')" class="admin-only absolute bottom-0 right-0 w-8 h-8 bg-amber-400 text-slate-900 rounded-full items-center justify-center shadow border-2 border-white text-xs">📷</button>
       </div>
       <div class="flex items-center justify-center gap-1.5">
-        <h3 id="chief-name" class="text-lg font-bold text-[#0f294a]">หัวหน้ากลุ่มการพยาบาล</h3>
+        <h3 id="chief-name" class="text-lg font-bold text-[#0f294a]"></h3>
         <button type="button" onclick="editSetting('chiefName', 'แก้ไขชื่อหัวหน้ากลุ่มการพยาบาล')" class="admin-only text-amber-600 text-xs">✏️</button>
       </div>
       <div class="flex items-center justify-center gap-1.5 mt-1">
-        <p id="chief-position" class="text-sm font-medium text-sky-700">พยาบาลวิชาชีพเชี่ยวชาญ (ด้านการพยาบาล)</p>
+        <p id="chief-position" class="text-sm font-medium text-sky-700"></p>
         <button type="button" onclick="editSetting('chiefPosition', 'แก้ไขตำแหน่ง')" class="admin-only text-amber-600 text-xs">✏️</button>
       </div>
       <div class="flex items-center justify-center gap-1.5 mt-2">
-        <p id="chief-quote" class="text-xs text-slate-500 italic">"พยาบาลบำราศฯ ร่วมใจ พัฒนาคุณภาพบริการ ปลอดภัยได้มาตรฐาน"</p>
+        <p id="chief-quote" class="text-xs text-slate-500 italic"></p>
         <button type="button" onclick="editSetting('chiefQuote', 'แก้ไขข้อความ')" class="admin-only text-amber-600 text-xs">✏️</button>
       </div>
     </div>
 
-    <!-- เส้นเชื่อมผังองค์กร -->
     <div class="w-0.5 h-8 bg-sky-200 mx-auto"></div>
     <div class="max-w-4xl mx-auto border-t-2 border-sky-200 mb-6"></div>
 
     <div class="flex justify-between items-center mb-4">
       <h3 class="text-base sm:text-lg font-bold text-[#0f294a]">คณะกรรมการบริหารกลุ่มการพยาบาล</h3>
-      <button type="button" onclick="openItemModal('executives')" class="admin-only bg-sky-600 hover:bg-sky-700 text-white px-3.5 py-2 rounded-xl text-xs font-display font-medium shadow items-center gap-1">
-        + เพิ่มตำแหน่งทีมบริหาร
-      </button>
+      <button type="button" onclick="openItemModal('executives')" class="admin-only bg-sky-600 hover:bg-sky-700 text-white px-3.5 py-2 rounded-xl text-xs font-display font-medium shadow items-center gap-1">+ เพิ่มตำแหน่งทีมบริหาร</button>
     </div>
-
-    <!-- กริดทีมบริหาร (รูปเล็กกว่าหัวหน้าพยาบาล เรียง 5 คอลัมน์บน PC) -->
     <div id="executives-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4"></div>
   </section>
 
@@ -197,7 +169,7 @@
     </div>
   </section>
 
-  <!-- 4. อัลบั้มภาพกิจกรรม -->
+  <!-- 4. อัลบั้มกิจกรรม -->
   <section id="albums" class="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex justify-between items-center mb-6">
       <h2 class="text-xl sm:text-2xl font-bold text-[#0f294a]">อัลบั้มภาพกิจกรรมและวิชาการ</h2>
@@ -237,7 +209,7 @@
     </div>
   </section>
 
-  <!-- 8. ส่วนท้ายเว็บไซต์ (Footer) -->
+  <!-- 8. Footer -->
   <footer id="contact" class="bg-[#0f294a] text-slate-300 py-8 text-center md:text-left">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
       <div>
@@ -248,9 +220,7 @@
     </div>
   </footer>
 
-  <!-- ================= MODALS ================= -->
-
-  <!-- Modal 1: Login (ไม่มีคำใบ้รหัสผ่าน) -->
+  <!-- MODALS -->
   <div id="login-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-xs w-full p-6 shadow-2xl">
       <h3 class="text-lg font-bold text-[#0f294a] mb-1">เข้าสู่ระบบผู้ดูแล</h3>
@@ -263,11 +233,9 @@
     </div>
   </div>
 
-  <!-- Modal 2: แก้ไขชื่อและไอคอนเมนู -->
   <div id="menu-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50 overflow-y-auto">
     <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 my-8">
       <h3 class="text-lg font-bold text-[#0f294a]">⚙️ ปรับแต่งไอคอนและชื่อเมนู</h3>
-      <p class="text-xs text-slate-500">เปลี่ยนไอคอน (อีโมจิ) และชื่อเมนูแต่ละหัวข้อ แล้วกดบันทึกเพื่ออัปเดตบนทุกอุปกรณ์</p>
       <div id="menu-editor-list" class="space-y-2.5 max-h-80 overflow-y-auto pr-1"></div>
       <div class="flex gap-2 pt-2">
         <button type="button" onclick="closeModal('menu-modal')" class="flex-1 py-2.5 rounded-xl border border-slate-300 text-sm">ยกเลิก</button>
@@ -276,7 +244,6 @@
     </div>
   </div>
 
-  <!-- Modal 3: Single Image (โลโก้ / รูปหน้าปก / หัวหน้าพยาบาล) -->
   <div id="single-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
       <h3 id="single-title" class="text-lg font-bold text-[#0f294a]">เปลี่ยนรูปภาพ</h3>
@@ -298,7 +265,6 @@
     </div>
   </div>
 
-  <!-- Modal 4: Item Form -->
   <div id="item-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50 overflow-y-auto">
     <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-3 my-8">
       <h3 id="item-title" class="text-lg font-bold text-[#0f294a]">จัดการข้อมูล</h3>
@@ -318,7 +284,6 @@
     </div>
   </div>
 
-  <!-- Modal 5: Reader -->
   <div id="reader-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50 overflow-y-auto">
     <div class="bg-white rounded-2xl max-w-xl w-full overflow-hidden shadow-2xl my-8">
       <div class="bg-slate-900 max-h-80 flex items-center justify-center">
@@ -338,6 +303,8 @@
 
   <script>
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbzzND8Kvi6-YsuCiQjrviN778yy-6Be2ANHot7YM11IZQMmKyqMgU5cw9-GGuchM6pA/exec';
+    const CACHE_KEY = 'bidi_nursing_cache_v2';
+
     let sessionPassword = '';
     let isAdmin = false;
     let pendingBase64 = null;
@@ -356,78 +323,87 @@
       { id: 'contact', icon: '📞', label: 'ติดต่อเรา' }
     ];
 
+    // โครงสร้างข้อมูลว่าง (ไม่ใส่ข้อมูลเทมเพลตปลอม)
     let siteData = {
       settings: {
         siteLogo: '',
         menusJson: JSON.stringify(DEFAULT_MENUS),
-        heroTitle: 'มุ่งมั่นพัฒนาคุณภาพการพยาบาล สู่มาตรฐานสากลด้วยหัวใจความเป็นมนุษย์',
-        heroSubtitle: 'ให้บริการพยาบาลผู้ป่วยโรคติดเชื้อ โรคอุบัติใหม่ และผู้ป่วยเฉพาะทางอย่างปลอดภัย ได้มาตรฐานวิชาชีพ พร้อมขับเคลื่อนนวัตกรรมและงานวิจัยทางการพยาบาล',
-        heroImg: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=900&q=80',
-        chiefImg: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=400&q=80',
+        heroTitle: 'กลุ่มการพยาบาล สถาบันบำราศนราดูร',
+        heroSubtitle: 'มุ่งมั่นพัฒนาคุณภาพการพยาบาล สู่มาตรฐานสากลด้วยหัวใจความเป็นมนุษย์',
+        heroImg: '',
+        chiefImg: '',
         chiefName: 'หัวหน้ากลุ่มการพยาบาล',
         chiefPosition: 'พยาบาลวิชาชีพเชี่ยวชาญ (ด้านการพยาบาล)',
-        chiefQuote: '"พยาบาลบำราศฯ ร่วมใจ พัฒนาคุณภาพบริการ ปลอดภัยได้มาตรฐาน"'
+        chiefQuote: ''
       },
-      executives: [
-        { id: 'ex1', name: 'รองหัวหน้ากลุ่มการพยาบาล', position: 'ด้านวิชาการและวิจัย', bio: 'กำกับดูแลมาตรฐานวิชาการ CQI / R2R', imageUrl: 'https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&w=300&q=80' },
-        { id: 'ex2', name: 'รองหัวหน้ากลุ่มการพยาบาล', position: 'ด้านบริการพยาบาล', bio: 'บริหารอัตรากำลังและคุณภาพบริการ', imageUrl: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&w=300&q=80' },
-        { id: 'ex3', name: 'รองหัวหน้ากลุ่มการพยาบาล', position: 'ด้านพัฒนาคุณภาพ (HA)', bio: 'ขับเคลื่อนคุณภาพและสารสนเทศ', imageUrl: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=300&q=80' },
-        { id: 'ex4', name: 'หัวหน้างานผู้ป่วยนอก', position: 'กลุ่มงาน OPD', bio: 'ดูแลระบบบริการผู้ป่วยนอก', imageUrl: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=300&q=80' },
-        { id: 'ex5', name: 'หัวหน้าหน่วยบริการเฉพาะทาง', position: 'หน่วยไตเทียม', bio: 'ดูแลผู้ป่วยฟอกเลือดด้วยเครื่องไตเทียม', imageUrl: 'https://images.unsplash.com/photo-1582750433449-648ed127bb54?auto=format&fit=crop&w=300&q=80' }
-      ],
-      units: [
-        { id: 'u1', name: 'หน่วยไตเทียม (Hemodialysis Unit)', category: 'บริการเฉพาะทาง', headName: 'พว.อ้อมอารีย์ พุทธาวันดี', phone: 'ต่อ 3402', description: 'ให้บริการฟอกเลือดด้วยเครื่องไตเทียมมาตรฐานสูง พร้อมห้องแยกโรคติดเชื้อและระบบ Smart Nursing Tools', imageUrl: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=600&q=80' }
-      ],
-      albums: [
-        { id: 'a1', title: 'ประชุมวิชาการและนำเสนอผลงาน CQI กลุ่มการพยาบาล', category: 'วิชาการ', date: 'พ.ย. 2026', description: 'นำเสนอผลงานนวัตกรรมและวิจัยทางการพยาบาล', coverUrl: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=600&q=80' }
-      ],
-      compliments: [
-        { id: 'c1', staffOrUnit: 'ทีมพยาบาลหน่วยไตเทียม', badge: 'บริการด้วยหัวใจ', message: 'ดูแลเอาใจใส่ดีมาก อธิบายชัดเจน ประทับใจการบริการครับ', sender: 'ญาติผู้รับบริการ', date: '10 พ.ย. 2026', imageUrl: 'https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=600&q=80' }
-      ],
-      congratulations: [
-        { id: 'g1', personName: 'บุคลากรดีเด่นกลุ่มการพยาบาล', awardType: 'รางวัลพยาบาลดีเด่น', title: 'ขอแสดงความยินดีในโอกาสได้รับรางวัลพยาบาลดีเด่น ด้านวิชาการ', detail: 'กลุ่มการพยาบาลขอแสดงความยินดีและชื่นชมในความมุ่งมั่นพัฒนางานวิชาการ', date: 'ต.ค. 2026', imageUrl: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=600&q=80' }
-      ],
-      news: [
-        { id: 'n1', type: 'ประกาศสำคัญ', title: 'แนวทางการส่งผลงานพัฒนาคุณภาพ (CQI) และงานวิจัย R2R', summary: 'เชิญชวนหน่วยงานในสังกัดส่งผลงานวิชาการผ่านระบบออนไลน์', detail: 'เปิดรับผลงาน CQI และ R2R ประจำปี สามารถส่งบทคัดย่อได้ตั้งแต่บัดนี้', date: '18 พ.ย. 2026', imageUrl: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=600&q=80' }
-      ]
+      executives: [],
+      units: [],
+      albums: [],
+      compliments: [],
+      congratulations: [],
+      news: []
     };
 
+    function hideInitialLoader() {
+      const loader = document.getElementById('initial-loader');
+      if (loader && !loader.classList.contains('fade-out')) {
+        loader.classList.add('fade-out');
+      }
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
-      renderAll();
+      renderMenus();
+      // 1. ตรวจสอบข้อมูลจริงที่เคยแคชไว้ในเครื่อง ถ้ามีให้แสดงทันที (0.05 วินาที) และปิดตัวโหลด
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          applyData(parsed);
+          hideInitialLoader();
+        } catch (e) {}
+      }
+
+      // 2. ตั้งเวลาสูงสุด 4 วินาที กันหน้าจอโหลดค้างหากเน็ตช้า
+      setTimeout(hideInitialLoader, 4000);
+
+      // 3. ดึงข้อมูลล่าสุดจาก Google Sheets มาอัปเดตทันที
       loadFromSheetJSONP(false);
     });
 
-    // ดึงข้อมูลจาก Google Sheets ด้วย JSONP (ซิงค์ตรงกันทุกเครื่องบน GitHub Pages)
-    function loadFromSheetJSONP(notify) {
-      const banner = document.getElementById('sync-banner');
-      if (banner) banner.classList.remove('hidden');
+    function applyData(d) {
+      if (!d) return;
+      if (d.settings && Object.keys(d.settings).length > 0) siteData.settings = { ...siteData.settings, ...d.settings };
+      if (Array.isArray(d.executives)) siteData.executives = d.executives;
+      if (Array.isArray(d.units)) siteData.units = d.units;
+      if (Array.isArray(d.albums)) siteData.albums = d.albums;
+      if (Array.isArray(d.compliments)) siteData.compliments = d.compliments;
+      if (Array.isArray(d.congratulations)) siteData.congratulations = d.congratulations;
+      if (Array.isArray(d.news)) siteData.news = d.news;
+      renderAll();
+    }
 
+    function loadFromSheetJSONP(notify) {
       const cbName = 'bidiJsonpCb_' + Date.now();
       const script = document.createElement('script');
 
       window[cbName] = function(json) {
-        if (banner) banner.classList.add('hidden');
         delete window[cbName];
         if (script.parentNode) script.parentNode.removeChild(script);
 
         if (json && json.status === 'success' && json.data) {
-          const d = json.data;
-          if (d.settings && Object.keys(d.settings).length > 0) siteData.settings = { ...siteData.settings, ...d.settings };
-          if (Array.isArray(d.executives) && d.executives.length > 0) siteData.executives = d.executives;
-          if (Array.isArray(d.units) && d.units.length > 0) siteData.units = d.units;
-          if (Array.isArray(d.albums) && d.albums.length > 0) siteData.albums = d.albums;
-          if (Array.isArray(d.compliments) && d.compliments.length > 0) siteData.compliments = d.compliments;
-          if (Array.isArray(d.congratulations) && d.congratulations.length > 0) siteData.congratulations = d.congratulations;
-          if (Array.isArray(d.news) && d.news.length > 0) siteData.news = d.news;
-          renderAll();
-          if (notify) Swal.fire({ icon: 'success', title: 'ซิงค์ข้อมูลล่าสุดเรียบร้อย', timer: 1500, showConfirmButton: false });
+          applyData(json.data);
+          try { localStorage.setItem(CACHE_KEY, JSON.stringify(siteData)); } catch (e) {}
+          hideInitialLoader();
+          if (notify) Swal.fire({ icon: 'success', title: 'ซิงค์ข้อมูลล่าสุดเรียบร้อย', timer: 1400, showConfirmButton: false });
+        } else {
+          hideInitialLoader();
         }
       };
 
       script.onerror = function() {
-        if (banner) banner.classList.add('hidden');
         delete window[cbName];
-        if (notify) Swal.fire('เชื่อมต่อไม่สำเร็จ', 'กรุณาตรวจสอบการ Deploy Apps Script เป็นเวอร์ชันล่าสุด', 'error');
+        hideInitialLoader();
+        if (notify) Swal.fire('เชื่อมต่อไม่สำเร็จ', 'กรุณาตรวจสอบการ Deploy Apps Script', 'error');
       };
 
       script.src = GAS_URL + '?callback=' + cbName + '&t=' + Date.now();
@@ -471,7 +447,7 @@
           document.body.classList.add('is-admin');
           closeModal('login-modal');
           renderAll();
-          Swal.fire({ icon: 'success', title: 'เข้าสู่โหมดผู้ดูแลระบบ', timer: 1400, showConfirmButton: false });
+          Swal.fire({ icon: 'success', title: 'เข้าสู่โหมดผู้ดูแลระบบ', timer: 1300, showConfirmButton: false });
         } else {
           Swal.fire('รหัสผ่านไม่ถูกต้อง', 'กรุณาลองใหม่อีกครั้ง', 'error');
         }
@@ -514,8 +490,8 @@
       const menus = getMenus();
       document.getElementById('menu-editor-list').innerHTML = menus.map((m, idx) => `
         <div class="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border">
-          <input type="text" id="menu-icon-${idx}" value="${m.icon}" class="w-14 text-center border rounded-lg py-1.5 text-base" title="ไอคอน">
-          <input type="text" id="menu-label-${idx}" value="${m.label}" class="flex-1 border rounded-lg px-3 py-1.5 text-sm" title="ชื่อเมนู">
+          <input type="text" id="menu-icon-${idx}" value="${m.icon}" class="w-14 text-center border rounded-lg py-1.5 text-base">
+          <input type="text" id="menu-label-${idx}" value="${m.label}" class="flex-1 border rounded-lg px-3 py-1.5 text-sm">
         </div>
       `).join('');
       openModal('menu-modal');
@@ -599,14 +575,12 @@
       btn.disabled = true; btn.textContent = '⏳ กำลังอัปโหลดขึ้น Drive...';
       try {
         let finalUrl = document.getElementById('single-url').value.trim();
-        if (pendingBase64) {
-          finalUrl = await uploadBase64ToDrive(pendingBase64);
-        }
+        if (pendingBase64) finalUrl = await uploadBase64ToDrive(pendingBase64);
         siteData.settings[curTarget] = finalUrl;
         renderAll();
         closeModal('single-modal');
         await saveAllToSheet(true);
-        Swal.fire({ icon: 'success', title: 'อัปเดตรูปภาพเรียบร้อย', timer: 1400, showConfirmButton: false });
+        Swal.fire({ icon: 'success', title: 'อัปเดตรูปภาพเรียบร้อย', timer: 1300, showConfirmButton: false });
       } catch (err) {
         Swal.fire('อัปโหลดรูปไม่สำเร็จ', err.message, 'error');
       } finally {
@@ -663,13 +637,11 @@
       btn.disabled = true; btn.textContent = '⏳ กำลังบันทึก...';
       try {
         let finalImgUrl = document.getElementById('item-url').value.trim();
-        if (pendingBase64) {
-          finalImgUrl = await uploadBase64ToDrive(pendingBase64);
-        }
+        if (pendingBase64) finalImgUrl = await uploadBase64ToDrive(pendingBase64);
         const obj = curIdx >= 0 ? { ...siteData[curSection][curIdx] } : { id: curSection + '_' + Date.now() };
         FIELDS[curSection].forEach(f => { obj[f.k] = document.getElementById('f-' + f.k).value.trim(); });
         const imgKey = curSection === 'albums' ? 'coverUrl' : 'imageUrl';
-        obj[imgKey] = finalImgUrl || 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=600&q=80';
+        obj[imgKey] = finalImgUrl;
 
         if (curIdx >= 0) siteData[curSection][curIdx] = obj;
         else siteData[curSection].unshift(obj);
@@ -677,7 +649,7 @@
         renderAll();
         closeModal('item-modal');
         await saveAllToSheet(true);
-        Swal.fire({ icon: 'success', title: 'บันทึกข้อมูลเรียบร้อย', timer: 1400, showConfirmButton: false });
+        Swal.fire({ icon: 'success', title: 'บันทึกข้อมูลเรียบร้อย', timer: 1300, showConfirmButton: false });
       } catch (err) {
         Swal.fire('บันทึกไม่สำเร็จ', err.message, 'error');
       } finally {
@@ -707,11 +679,14 @@
       document.getElementById('r-title').textContent = title;
       document.getElementById('r-meta').textContent = meta;
       document.getElementById('r-body').textContent = body;
-      document.getElementById('r-img').src = img;
+      const rImg = document.getElementById('r-img');
+      if (img) { rImg.src = img; rImg.classList.remove('hidden'); }
+      else { rImg.classList.add('hidden'); }
       openModal('reader-modal');
     }
 
     function renderAll() {
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify(siteData)); } catch (e) {}
       renderMenus();
       const s = siteData.settings;
       if (s.siteLogo) {
@@ -721,29 +696,36 @@
       }
       document.getElementById('hero-title').textContent = s.heroTitle;
       document.getElementById('hero-subtitle').textContent = s.heroSubtitle;
-      document.getElementById('hero-img').src = s.heroImg;
-      document.getElementById('chief-img').src = s.chiefImg;
+
+      const heroImgEl = document.getElementById('hero-img');
+      if (s.heroImg) { heroImgEl.src = s.heroImg; heroImgEl.classList.remove('hidden'); }
+
+      const chiefImgEl = document.getElementById('chief-img');
+      if (s.chiefImg) { chiefImgEl.src = s.chiefImg; chiefImgEl.classList.remove('hidden'); }
+
       document.getElementById('chief-name').textContent = s.chiefName;
       document.getElementById('chief-position').textContent = s.chiefPosition;
       document.getElementById('chief-quote').textContent = s.chiefQuote;
 
-      document.getElementById('executives-grid').innerHTML = siteData.executives.map((ex, i) => `
+      const emptyMsg = '<p class="col-span-full text-center text-slate-400 text-sm py-6">ยังไม่มีข้อมูลในหมวดหมู่นี้</p>';
+
+      document.getElementById('executives-grid').innerHTML = siteData.executives.length ? siteData.executives.map((ex, i) => `
         <div class="bg-white rounded-2xl border border-slate-200 p-3.5 text-center shadow-sm relative">
           <div class="admin-only absolute top-2 right-2 gap-1">
             <button type="button" onclick="openItemModal('executives', ${i})" class="bg-amber-400 text-slate-900 p-1 rounded text-xs">✏️</button>
             <button type="button" onclick="delItem('executives', ${i})" class="bg-red-500 text-white p-1 rounded text-xs">🗑️</button>
           </div>
-          <img src="${ex.imageUrl}" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full object-cover border-2 border-sky-100 mb-2.5">
+          <img src="${ex.imageUrl || ''}" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full object-cover border-2 border-sky-100 mb-2.5 bg-slate-100">
           <h4 class="font-bold text-xs sm:text-sm text-[#0f294a] line-clamp-1">${ex.name}</h4>
           <p class="text-[11px] sm:text-xs text-sky-700 font-medium mt-0.5 line-clamp-2">${ex.position}</p>
           <p class="text-[10px] sm:text-[11px] text-slate-500 mt-1 line-clamp-2">${ex.bio || ''}</p>
         </div>
-      `).join('');
+      `).join('') : emptyMsg;
 
-      document.getElementById('units-grid').innerHTML = siteData.units.map((u, i) => `
+      document.getElementById('units-grid').innerHTML = siteData.units.length ? siteData.units.map((u, i) => `
         <div class="bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden shadow-sm flex flex-col">
           <div class="relative h-44 bg-slate-200">
-            <img src="${u.imageUrl}" class="w-full h-full object-cover">
+            <img src="${u.imageUrl || ''}" class="w-full h-full object-cover">
             <span class="absolute top-3 left-3 bg-[#0f294a]/90 text-white text-xs px-2.5 py-1 rounded-lg">${u.category}</span>
             <div class="admin-only absolute top-3 right-3 gap-1">
               <button type="button" onclick="openItemModal('units', ${i})" class="bg-amber-400 text-slate-900 px-2 py-1 rounded-lg text-xs font-semibold">แก้ไข</button>
@@ -754,15 +736,15 @@
             <h3 class="font-bold text-base text-[#0f294a]">${u.name}</h3>
             <p class="text-xs text-sky-700 mt-1">หัวหน้าหน่วยงาน: ${u.headName} | โทร: ${u.phone}</p>
             <p class="text-sm text-slate-600 mt-2 line-clamp-2 flex-1">${u.description}</p>
-            <button type="button" onclick='openReader(${JSON.stringify(u.category)}, ${JSON.stringify(u.name)}, ${JSON.stringify("หัวหน้า: " + u.headName + " | โทร: " + u.phone)}, ${JSON.stringify(u.description)}, ${JSON.stringify(u.imageUrl)})' class="mt-3 text-sky-700 text-xs font-semibold text-left">อ่านรายละเอียด →</button>
+            <button type="button" onclick='openReader(${JSON.stringify(u.category)}, ${JSON.stringify(u.name)}, ${JSON.stringify("หัวหน้า: " + u.headName + " | โทร: " + u.phone)}, ${JSON.stringify(u.description)}, ${JSON.stringify(u.imageUrl || "")})' class="mt-3 text-sky-700 text-xs font-semibold text-left">อ่านรายละเอียด →</button>
           </div>
         </div>
-      `).join('');
+      `).join('') : emptyMsg;
 
-      document.getElementById('albums-grid').innerHTML = siteData.albums.map((a, i) => `
+      document.getElementById('albums-grid').innerHTML = siteData.albums.length ? siteData.albums.map((a, i) => `
         <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-          <div class="relative h-48 bg-slate-200 cursor-pointer" onclick='openReader(${JSON.stringify(a.category)}, ${JSON.stringify(a.title)}, ${JSON.stringify(a.date)}, ${JSON.stringify(a.description)}, ${JSON.stringify(a.coverUrl)})'>
-            <img src="${a.coverUrl}" class="w-full h-full object-cover">
+          <div class="relative h-48 bg-slate-200 cursor-pointer" onclick='openReader(${JSON.stringify(a.category)}, ${JSON.stringify(a.title)}, ${JSON.stringify(a.date)}, ${JSON.stringify(a.description)}, ${JSON.stringify(a.coverUrl || "")})'>
+            <img src="${a.coverUrl || ''}" class="w-full h-full object-cover">
             <span class="absolute top-3 left-3 bg-sky-600 text-white text-xs px-2.5 py-1 rounded-lg">${a.category}</span>
             <div class="admin-only absolute top-3 right-3 gap-1" onclick="event.stopPropagation()">
               <button type="button" onclick="openItemModal('albums', ${i})" class="bg-amber-400 text-slate-900 px-2 py-1 rounded-lg text-xs font-semibold">แก้ไข</button>
@@ -775,12 +757,12 @@
             <p class="text-sm text-slate-600 mt-2 line-clamp-2">${a.description}</p>
           </div>
         </div>
-      `).join('');
+      `).join('') : emptyMsg;
 
-      document.getElementById('compliments-grid').innerHTML = siteData.compliments.map((c, i) => `
+      document.getElementById('compliments-grid').innerHTML = siteData.compliments.length ? siteData.compliments.map((c, i) => `
         <div class="bg-white rounded-2xl border border-sky-100 overflow-hidden shadow-sm flex flex-col">
           <div class="relative h-44 bg-slate-100">
-            <img src="${c.imageUrl}" class="w-full h-full object-cover">
+            <img src="${c.imageUrl || ''}" class="w-full h-full object-cover">
             <span class="absolute top-3 left-3 bg-emerald-600 text-white text-xs px-2.5 py-1 rounded-full">${c.badge}</span>
             <div class="admin-only absolute top-3 right-3 gap-1">
               <button type="button" onclick="openItemModal('compliments', ${i})" class="bg-amber-400 text-slate-900 px-2 py-1 rounded-lg text-xs font-semibold">แก้ไข</button>
@@ -792,16 +774,16 @@
             <p class="text-sm text-slate-600 mt-2 line-clamp-2 italic flex-1">"${c.message}"</p>
             <div class="mt-3 pt-3 border-t flex justify-between text-xs text-slate-500">
               <span>โดย: ${c.sender}</span>
-              <button type="button" onclick='openReader(${JSON.stringify(c.badge)}, ${JSON.stringify(c.staffOrUnit)}, ${JSON.stringify("โดย: " + c.sender + " | " + c.date)}, ${JSON.stringify(c.message)}, ${JSON.stringify(c.imageUrl)})' class="text-sky-700 font-semibold">อ่านทั้งหมด →</button>
+              <button type="button" onclick='openReader(${JSON.stringify(c.badge)}, ${JSON.stringify(c.staffOrUnit)}, ${JSON.stringify("โดย: " + c.sender + " | " + c.date)}, ${JSON.stringify(c.message)}, ${JSON.stringify(c.imageUrl || "")})' class="text-sky-700 font-semibold">อ่านทั้งหมด →</button>
             </div>
           </div>
         </div>
-      `).join('');
+      `).join('') : emptyMsg;
 
-      document.getElementById('congratulations-grid').innerHTML = siteData.congratulations.map((g, i) => `
+      document.getElementById('congratulations-grid').innerHTML = siteData.congratulations.length ? siteData.congratulations.map((g, i) => `
         <div class="bg-white rounded-2xl border border-amber-200/70 overflow-hidden shadow-sm flex flex-col">
           <div class="relative h-44 bg-amber-50">
-            <img src="${g.imageUrl}" class="w-full h-full object-cover">
+            <img src="${g.imageUrl || ''}" class="w-full h-full object-cover">
             <span class="absolute top-3 left-3 bg-amber-500 text-slate-950 font-semibold text-xs px-2.5 py-1 rounded-full">${g.awardType}</span>
             <div class="admin-only absolute top-3 right-3 gap-1">
               <button type="button" onclick="openItemModal('congratulations', ${i})" class="bg-amber-400 text-slate-900 px-2 py-1 rounded-lg text-xs font-semibold">แก้ไข</button>
@@ -812,15 +794,15 @@
             <p class="text-xs text-amber-700 font-semibold">${g.personName}</p>
             <h3 class="font-bold text-base text-[#0f294a] mt-1 line-clamp-2">${g.title}</h3>
             <p class="text-sm text-slate-600 mt-2 line-clamp-2 flex-1">${g.detail}</p>
-            <button type="button" onclick='openReader(${JSON.stringify(g.awardType)}, ${JSON.stringify(g.title)}, ${JSON.stringify(g.personName + " | " + g.date)}, ${JSON.stringify(g.detail)}, ${JSON.stringify(g.imageUrl)})' class="mt-3 text-amber-700 text-xs font-semibold text-left">อ่านรายละเอียด →</button>
+            <button type="button" onclick='openReader(${JSON.stringify(g.awardType)}, ${JSON.stringify(g.title)}, ${JSON.stringify(g.personName + " | " + g.date)}, ${JSON.stringify(g.detail)}, ${JSON.stringify(g.imageUrl || "")})' class="mt-3 text-amber-700 text-xs font-semibold text-left">อ่านรายละเอียด →</button>
           </div>
         </div>
-      `).join('');
+      `).join('') : emptyMsg;
 
-      document.getElementById('news-grid').innerHTML = siteData.news.map((n, i) => `
+      document.getElementById('news-grid').innerHTML = siteData.news.length ? siteData.news.map((n, i) => `
         <div class="bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden shadow-sm flex flex-col">
           <div class="relative h-44 bg-slate-200">
-            <img src="${n.imageUrl}" class="w-full h-full object-cover">
+            <img src="${n.imageUrl || ''}" class="w-full h-full object-cover">
             <span class="absolute top-3 left-3 bg-red-600 text-white text-xs px-2.5 py-1 rounded-lg">${n.type}</span>
             <div class="admin-only absolute top-3 right-3 gap-1">
               <button type="button" onclick="openItemModal('news', ${i})" class="bg-amber-400 text-slate-900 px-2 py-1 rounded-lg text-xs font-semibold">แก้ไข</button>
@@ -831,10 +813,10 @@
             <p class="text-xs text-slate-400">${n.date}</p>
             <h3 class="font-bold text-base text-[#0f294a] mt-1 line-clamp-2">${n.title}</h3>
             <p class="text-sm text-slate-600 mt-2 line-clamp-2 flex-1">${n.summary}</p>
-            <button type="button" onclick='openReader(${JSON.stringify(n.type)}, ${JSON.stringify(n.title)}, ${JSON.stringify(n.date)}, ${JSON.stringify(n.detail)}, ${JSON.stringify(n.imageUrl)})' class="mt-3 text-sky-700 text-xs font-semibold text-left">อ่านประกาศฉบับเต็ม →</button>
+            <button type="button" onclick='openReader(${JSON.stringify(n.type)}, ${JSON.stringify(n.title)}, ${JSON.stringify(n.date)}, ${JSON.stringify(n.detail)}, ${JSON.stringify(n.imageUrl || "")})' class="mt-3 text-sky-700 text-xs font-semibold text-left">อ่านประกาศฉบับเต็ม →</button>
           </div>
         </div>
-      `).join('');
+      `).join('') : emptyMsg;
     }
 
     async function saveAllToSheet(silent) {
@@ -853,7 +835,7 @@
         const json = await res.json();
         if (!silent) {
           if (json.status === 'success') {
-            Swal.fire({ icon: 'success', title: 'บันทึกข้อมูลลง Google Sheets เรียบร้อย', timer: 1500, showConfirmButton: false });
+            Swal.fire({ icon: 'success', title: 'บันทึกข้อมูลลง Google Sheets เรียบร้อย', timer: 1400, showConfirmButton: false });
           } else {
             Swal.fire('บันทึกไม่สำเร็จ', json.message, 'error');
           }
