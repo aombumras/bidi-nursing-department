@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>กลุ่มการพยาบาล สถาบันบำราศนราดูร | BIDI Nursing Department</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=Sarabun:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Sarabun', sans-serif; background-color: #f8fafc; color: #1e293b; }
@@ -17,75 +20,89 @@
 </head>
 <body class="antialiased">
 
-  <!-- แถบแจ้งสถานะการซิงค์ข้อมูลจาก Google Sheets -->
-  <div id="sync-banner" class="hidden bg-sky-900 text-sky-100 text-xs text-center py-1 px-4 font-display">
-    ⏳ กำลังซิงค์ข้อมูลล่าสุดจากฐานข้อมูลกลาง...
+  <!-- แถบสถานะการซิงค์ข้อมูลจาก Google Sheets -->
+  <div id="sync-banner" class="hidden bg-[#0f294a] text-sky-200 text-xs text-center py-1.5 px-4 font-display">
+    ⏳ กำลังดึงข้อมูลล่าสุดจากฐานข้อมูลกลาง...
   </div>
 
-  <!-- แถบเครื่องมือผู้ดูแลระบบ (แสดงเฉพาะเมื่อล็อกอินแล้ว เลื่อนตามหน้าจอ) -->
-  <div class="admin-block bg-amber-400 text-slate-950 px-4 py-2.5 shadow">
+  <!-- แถบเครื่องมือผู้ดูแลระบบ (แสดงเฉพาะเมื่อยืนยันตัวตนสำเร็จ เลื่อนตามหน้าจอไม่ฟิกบัง) -->
+  <div class="admin-block bg-amber-400 text-slate-950 px-4 py-2.5 shadow-md">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm font-display">
-      <div class="font-bold">🔑 โหมดผู้ดูแลระบบ (แก้ไขรูปหน้าปก เมนู ไอคอน และข้อมูลได้ทันที)</div>
-      <div class="flex flex-wrap gap-2">
-        <button type="button" onclick="openMenuEditor()" class="bg-sky-700 hover:bg-sky-800 text-white px-3 py-1.5 rounded-lg text-xs font-medium">⚙️ แก้ไขชื่อ/ไอคอนเมนู</button>
-        <button type="button" onclick="saveAllToSheet(false)" id="btn-save-all" class="bg-slate-900 hover:bg-slate-800 text-white px-3.5 py-1.5 rounded-lg text-xs font-medium">💾 บันทึกลงชีต</button>
-        <button type="button" onclick="loadFromSheetJSONP(true)" class="bg-white hover:bg-slate-100 text-slate-900 px-3 py-1.5 rounded-lg text-xs font-medium">🔄 ดึงข้อมูลล่าสุด</button>
-        <button type="button" onclick="logoutAdmin()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium">ออกจากแอดมิน</button>
+      <div class="font-bold flex items-center gap-1.5">
+        <span class="bg-slate-900 text-amber-400 px-2 py-0.5 rounded text-[11px]">ADMIN</span>
+        <span>โหมดผู้ดูแลระบบ (แก้ไขรูปหน้าปก โลโก้ เมนู และข้อมูลได้ทันที)</span>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <button type="button" onclick="openMenuEditor()" class="bg-sky-700 hover:bg-sky-800 text-white px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm">
+          ⚙️ แก้ไขชื่อ/ไอคอนเมนู
+        </button>
+        <button type="button" onclick="saveAllToSheet(false)" id="btn-save-all" class="bg-slate-900 hover:bg-slate-800 text-white px-3.5 py-1.5 rounded-lg text-xs font-medium shadow-sm">
+          💾 บันทึกทั้งหมดลงชีต
+        </button>
+        <button type="button" onclick="loadFromSheetJSONP(true)" class="bg-white hover:bg-slate-100 text-slate-900 px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm">
+          🔄 ซิงค์ข้อมูลล่าสุด
+        </button>
+        <button type="button" onclick="logoutAdmin()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm">
+          ออกจากระบบ
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- ส่วนหัวเว็บไซต์ (Responsive สมาร์ทโฟน + เมนูชิดขวามือ) -->
+  <!-- ส่วนหัวเว็บไซต์ (เลื่อนตามหน้าจอ Responsive สมาร์ทโฟน เมนูชิดขวามือ) -->
   <header class="bg-white border-b border-slate-200 shadow-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
       <div class="flex items-center justify-between gap-3">
         <!-- โลโก้สถาบัน (ซ่อนทางเข้าแอดมิน) + ชื่อหน่วยงาน -->
         <div class="flex items-center gap-3 min-w-0">
           <div class="relative shrink-0">
-            <button type="button" onclick="onLogoClick()" title="กลุ่มการพยาบาล สถาบันบำราศนราดูร" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-sky-50 border border-sky-200 flex items-center justify-center overflow-hidden shadow-sm hover:ring-2 hover:ring-sky-400">
-              <img id="site-logo-img" src="" alt="โลโก้สถาบัน" class="w-full h-full object-contain hidden">
+            <button type="button" onclick="onLogoClick()" title="กลุ่มการพยาบาล สถาบันบำราศนราดูร" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-sky-50 border border-sky-200 flex items-center justify-center overflow-hidden shadow-sm hover:ring-2 hover:ring-sky-400 transition focus:outline-none">
+              <img id="site-logo-img" src="" alt="โลโก้สถาบันบำราศนราดูร" class="w-full h-full object-contain hidden">
               <svg id="site-logo-svg" viewBox="0 0 100 100" class="w-9 h-9 sm:w-11 sm:h-11">
                 <circle cx="50" cy="50" r="46" fill="#0f294a"/>
+                <circle cx="50" cy="50" r="41" fill="none" stroke="#38bdf8" stroke-width="2"/>
                 <path d="M50 22 L50 78 M32 50 L68 50" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
                 <circle cx="50" cy="50" r="10" fill="#0284c7"/>
-                <text x="50" y="90" text-anchor="middle" fill="#fbbf24" font-size="11" font-weight="bold">BIDI</text>
+                <text x="50" y="90" text-anchor="middle" fill="#fbbf24" font-size="11" font-weight="bold" font-family="sans-serif">BIDI</text>
               </svg>
             </button>
-            <button type="button" onclick="openSingleImg('siteLogo', 'เปลี่ยนโลโก้สถาบัน')" class="admin-only absolute -bottom-1 -right-1 w-6 h-6 bg-amber-400 text-slate-900 rounded-full items-center justify-center shadow border border-white text-[11px]">📷</button>
+            <button type="button" onclick="openSingleImg('siteLogo', 'เปลี่ยนโลโก้สถาบันบำราศนราดูร')" class="admin-only absolute -bottom-1 -right-1 w-6 h-6 bg-amber-400 hover:bg-amber-500 text-slate-900 rounded-full items-center justify-center shadow border border-white text-[11px]" title="เปลี่ยนรูปโลโก้">
+              📷
+            </button>
           </div>
 
           <div class="min-w-0">
-            <h1 class="text-base sm:text-xl lg:text-2xl font-bold text-[#0f294a] truncate">
+            <h1 class="text-base sm:text-xl lg:text-2xl font-bold text-[#0f294a] truncate leading-tight">
               กลุ่มการพยาบาล สถาบันบำราศนราดูร
             </h1>
-            <p class="text-[11px] sm:text-xs text-sky-700 font-medium truncate">
-              BIDI Nursing Department | กรมควบคุมโรค
+            <p class="text-[11px] sm:text-xs text-sky-700 font-medium truncate mt-0.5">
+              BIDI Nursing Department | กรมควบคุมโรค กระทรวงสาธารณสุข
             </p>
           </div>
         </div>
 
-        <!-- ปุ่มเปิดเมนูบนสมาร์ทโฟน (ชิดขวามือ) -->
-        <button type="button" onclick="toggleMobileMenu()" aria-label="เปิดเมนู" class="lg:hidden shrink-0 inline-flex items-center justify-center p-2.5 rounded-xl bg-sky-50 text-[#0f294a] border border-sky-200 hover:bg-sky-100">
-          <svg id="icon-hamburger" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <!-- ปุ่มเปิดเมนู 3 ขีดบนสมาร์ทโฟน (จัดชิดขวามือ) -->
+        <button type="button" onclick="toggleMobileMenu()" aria-label="เปิดเมนูนำทาง" class="lg:hidden shrink-0 inline-flex items-center justify-center p-2.5 rounded-xl bg-sky-50 text-[#0f294a] border border-sky-200 hover:bg-sky-100 transition">
+          <svg id="icon-hamburger" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
           </svg>
-          <svg id="icon-close" class="w-6 h-6 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <svg id="icon-close" class="w-6 h-6 hidden" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
           </svg>
         </button>
 
-        <!-- แถบเมนูบนหน้าจอ PC (เรียงชิดขวามือ) -->
+        <!-- แถบเมนูนำทางบน PC (เรียงชิดขวามือ) -->
         <nav id="desktop-nav" class="hidden lg:flex items-center justify-end gap-1 text-sm font-display font-medium"></nav>
       </div>
 
-      <!-- เมนูดรอปดาวน์บนสมาร์ทโฟน (เรียงชิดขวามือ สวยงาม อ่านง่าย) -->
+      <!-- เมนูดรอปดาวน์บนสมาร์ทโฟน (เรียงชิดขวามือ) -->
       <div id="mobile-menu-panel" class="hidden lg:hidden mt-3 pt-3 border-t border-slate-100">
         <nav id="mobile-nav" class="flex flex-col items-end gap-1.5 text-sm font-display font-medium"></nav>
       </div>
     </div>
   </header>
 
-  <!-- 1. แบนเนอร์หลัก (รูปหน้าปก + ข้อความ) -->
+  <!-- 1. แบนเนอร์หลัก (รูปหน้าปก + ข้อความประชาสัมพันธ์) -->
   <section id="home" class="bg-gradient-to-br from-[#0f294a] via-[#163a66] to-[#0284c7] text-white py-10 sm:py-16">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
       <div class="lg:col-span-7 space-y-4">
@@ -96,13 +113,21 @@
           <h2 id="hero-title" class="text-2xl sm:text-4xl font-bold leading-tight">
             มุ่งมั่นพัฒนาคุณภาพการพยาบาล สู่มาตรฐานสากลด้วยหัวใจความเป็นมนุษย์
           </h2>
-          <button type="button" onclick="editSetting('heroTitle', 'แก้ไขหัวข้อหน้าปก')" class="admin-only shrink-0 bg-amber-400 text-slate-900 p-1.5 rounded-lg text-xs">✏️</button>
+          <button type="button" onclick="editSetting('heroTitle', 'แก้ไขหัวข้อหน้าปก')" class="admin-only shrink-0 bg-amber-400 text-slate-900 p-1.5 rounded-lg text-xs shadow">✏️</button>
         </div>
         <div class="flex items-start gap-2">
           <p id="hero-subtitle" class="text-sky-100 text-sm sm:text-lg leading-relaxed">
             ให้บริการพยาบาลผู้ป่วยโรคติดเชื้อ โรคอุบัติใหม่ และผู้ป่วยเฉพาะทางอย่างปลอดภัย ได้มาตรฐานวิชาชีพ พร้อมขับเคลื่อนนวัตกรรมและงานวิจัยทางการพยาบาล
           </p>
-          <button type="button" onclick="editSetting('heroSubtitle', 'แก้ไขคำโปรยหน้าปก')" class="admin-only shrink-0 bg-amber-400 text-slate-900 p-1.5 rounded-lg text-xs">✏️</button>
+          <button type="button" onclick="editSetting('heroSubtitle', 'แก้ไขคำโปรยหน้าปก')" class="admin-only shrink-0 bg-amber-400 text-slate-900 p-1.5 rounded-lg text-xs shadow">✏️</button>
+        </div>
+        <div class="pt-2 flex flex-wrap gap-3">
+          <a href="#units" class="bg-white text-[#0f294a] hover:bg-sky-50 font-display font-semibold px-5 py-2.5 rounded-xl shadow transition text-sm">
+            หน่วยงานในสังกัด
+          </a>
+          <a href="#albums" class="bg-sky-600/40 hover:bg-sky-600/60 border border-sky-300/40 text-white font-display font-medium px-5 py-2.5 rounded-xl transition text-sm">
+            ภาพกิจกรรมกลุ่มการพยาบาล
+          </a>
         </div>
       </div>
 
@@ -118,10 +143,11 @@
     </div>
   </section>
 
-  <!-- 2. ผู้บริหารและทีมบริหาร -->
+  <!-- 2. ผู้บริหารและทีมบริหารกลุ่มการพยาบาล -->
   <section id="executives" class="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="text-center mb-8">
-      <h2 class="text-2xl sm:text-3xl font-bold text-[#0f294a]">ผู้บริหารและทีมบริหารกลุ่มการพยาบาล</h2>
+      <span class="text-sky-600 font-display font-semibold text-xs sm:text-sm uppercase tracking-wider">Nursing Leadership</span>
+      <h2 class="text-2xl sm:text-3xl font-bold text-[#0f294a] mt-1">ผู้บริหารและทีมบริหารกลุ่มการพยาบาล</h2>
       <p class="text-slate-600 text-sm mt-1">โครงสร้างการบริหารงานกลุ่มการพยาบาล สถาบันบำราศนราดูร</p>
     </div>
 
@@ -145,13 +171,18 @@
       </div>
     </div>
 
+    <!-- เส้นเชื่อมผังองค์กร -->
     <div class="w-0.5 h-8 bg-sky-200 mx-auto"></div>
     <div class="max-w-4xl mx-auto border-t-2 border-sky-200 mb-6"></div>
 
     <div class="flex justify-between items-center mb-4">
       <h3 class="text-base sm:text-lg font-bold text-[#0f294a]">คณะกรรมการบริหารกลุ่มการพยาบาล</h3>
-      <button type="button" onclick="openItemModal('executives')" class="admin-only bg-sky-600 text-white px-3.5 py-2 rounded-xl text-xs font-medium shadow">+ เพิ่มตำแหน่งทีมบริหาร</button>
+      <button type="button" onclick="openItemModal('executives')" class="admin-only bg-sky-600 hover:bg-sky-700 text-white px-3.5 py-2 rounded-xl text-xs font-display font-medium shadow items-center gap-1">
+        + เพิ่มตำแหน่งทีมบริหาร
+      </button>
     </div>
+
+    <!-- กริดทีมบริหาร (รูปเล็กกว่าหัวหน้าพยาบาล เรียง 5 คอลัมน์บน PC) -->
     <div id="executives-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4"></div>
   </section>
 
@@ -160,17 +191,17 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center mb-6">
         <h2 class="text-xl sm:text-2xl font-bold text-[#0f294a]">หน่วยงานในสังกัดกลุ่มการพยาบาล</h2>
-        <button type="button" onclick="openItemModal('units')" class="admin-only bg-sky-600 text-white px-4 py-2 rounded-xl text-xs font-medium shadow">+ เพิ่มหน่วยงาน</button>
+        <button type="button" onclick="openItemModal('units')" class="admin-only bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-xl text-xs font-display font-medium shadow">+ เพิ่มหน่วยงาน</button>
       </div>
       <div id="units-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
     </div>
   </section>
 
-  <!-- 4. อัลบั้มกิจกรรม -->
+  <!-- 4. อัลบั้มภาพกิจกรรม -->
   <section id="albums" class="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex justify-between items-center mb-6">
       <h2 class="text-xl sm:text-2xl font-bold text-[#0f294a]">อัลบั้มภาพกิจกรรมและวิชาการ</h2>
-      <button type="button" onclick="openItemModal('albums')" class="admin-only bg-sky-600 text-white px-4 py-2 rounded-xl text-xs font-medium shadow">+ สร้างอัลบั้มใหม่</button>
+      <button type="button" onclick="openItemModal('albums')" class="admin-only bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-xl text-xs font-display font-medium shadow">+ สร้างอัลบั้มใหม่</button>
     </div>
     <div id="albums-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
   </section>
@@ -180,7 +211,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center mb-6">
         <h2 class="text-xl sm:text-2xl font-bold text-[#0f294a]">คำชมเชยบุคลากร / เสียงจากผู้รับบริการ</h2>
-        <button type="button" onclick="openItemModal('compliments')" class="admin-only bg-sky-600 text-white px-4 py-2 rounded-xl text-xs font-medium shadow">+ เพิ่มคำชมเชย</button>
+        <button type="button" onclick="openItemModal('compliments')" class="admin-only bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-xl text-xs font-display font-medium shadow">+ เพิ่มคำชมเชย</button>
       </div>
       <div id="compliments-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
     </div>
@@ -190,7 +221,7 @@
   <section id="congratulations" class="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex justify-between items-center mb-6">
       <h2 class="text-xl sm:text-2xl font-bold text-[#0f294a]">ร่วมแสดงความยินดีกับบุคลากร</h2>
-      <button type="button" onclick="openItemModal('congratulations')" class="admin-only bg-amber-500 text-slate-950 px-4 py-2 rounded-xl text-xs font-semibold shadow">+ เพิ่มความยินดี</button>
+      <button type="button" onclick="openItemModal('congratulations')" class="admin-only bg-amber-500 hover:bg-amber-600 text-slate-950 px-4 py-2 rounded-xl text-xs font-display font-semibold shadow">+ เพิ่มความยินดี</button>
     </div>
     <div id="congratulations-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
   </section>
@@ -200,31 +231,33 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center mb-6">
         <h2 class="text-xl sm:text-2xl font-bold text-[#0f294a]">ประกาศสำคัญและข่าวประชาสัมพันธ์</h2>
-        <button type="button" onclick="openItemModal('news')" class="admin-only bg-sky-600 text-white px-4 py-2 rounded-xl text-xs font-medium shadow">+ เพิ่มประกาศ</button>
+        <button type="button" onclick="openItemModal('news')" class="admin-only bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-xl text-xs font-display font-medium shadow">+ เพิ่มประกาศ</button>
       </div>
       <div id="news-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
     </div>
   </section>
 
-  <!-- 8. ติดต่อเรา -->
+  <!-- 8. ส่วนท้ายเว็บไซต์ (Footer) -->
   <footer id="contact" class="bg-[#0f294a] text-slate-300 py-8 text-center md:text-left">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
       <div>
-        <h3 class="text-white font-bold">กลุ่มการพยาบาล สถาบันบำราศนราดูร</h3>
-        <p class="text-xs text-slate-400 mt-1">38 ถ.ติวานนท์ ต.ตลาดขวัญ อ.เมือง จ.นนทบุรี 11000 | โทร. 02-590-3402</p>
+        <h3 class="text-white font-display font-bold">กลุ่มการพยาบาล สถาบันบำราศนราดูร</h3>
+        <p class="text-xs text-slate-400 mt-1">เลขที่ 38 ถนนติวานนท์ ตำบลตลาดขวัญ อำเภอเมืองนนทบุรี จังหวัดนนทบุรี 11000 | โทร. 02-590-3402</p>
       </div>
       <p class="text-xs text-slate-400">© 2026 BIDI Nursing Department | กรมควบคุมโรค กระทรวงสาธารณสุข</p>
     </div>
   </footer>
+
+  <!-- ================= MODALS ================= -->
 
   <!-- Modal 1: Login (ไม่มีคำใบ้รหัสผ่าน) -->
   <div id="login-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-xs w-full p-6 shadow-2xl">
       <h3 class="text-lg font-bold text-[#0f294a] mb-1">เข้าสู่ระบบผู้ดูแล</h3>
       <p class="text-xs text-slate-500 mb-4">กรุณาระบุรหัสผ่านสำหรับเจ้าหน้าที่ดูแลเว็บไซต์</p>
-      <input type="password" id="pass-input" placeholder="••••••" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-center text-lg tracking-widest mb-4 focus:outline-none focus:ring-2 focus:ring-sky-500">
+      <input type="password" id="pass-input" placeholder="••••••" onkeydown="if(event.key==='Enter') loginAdmin()" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-center text-lg tracking-widest mb-4 focus:outline-none focus:ring-2 focus:ring-sky-500">
       <div class="flex gap-2">
-        <button type="button" onclick="closeModal('login-modal')" class="flex-1 py-2.5 rounded-xl border text-sm">ยกเลิก</button>
+        <button type="button" onclick="closeModal('login-modal')" class="flex-1 py-2.5 rounded-xl border border-slate-300 text-sm">ยกเลิก</button>
         <button type="button" onclick="loginAdmin()" id="btn-login" class="flex-1 py-2.5 rounded-xl bg-[#0f294a] text-white text-sm font-semibold">เข้าสู่ระบบ</button>
       </div>
     </div>
@@ -234,10 +267,10 @@
   <div id="menu-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50 overflow-y-auto">
     <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 my-8">
       <h3 class="text-lg font-bold text-[#0f294a]">⚙️ ปรับแต่งไอคอนและชื่อเมนู</h3>
-      <p class="text-xs text-slate-500">สามารถเปลี่ยนไอคอน (อีโมจิหรือข้อความย่อ) และชื่อเมนูแต่ละหัวข้อได้ตามต้องการ</p>
+      <p class="text-xs text-slate-500">เปลี่ยนไอคอน (อีโมจิ) และชื่อเมนูแต่ละหัวข้อ แล้วกดบันทึกเพื่ออัปเดตบนทุกอุปกรณ์</p>
       <div id="menu-editor-list" class="space-y-2.5 max-h-80 overflow-y-auto pr-1"></div>
       <div class="flex gap-2 pt-2">
-        <button type="button" onclick="closeModal('menu-modal')" class="flex-1 py-2.5 rounded-xl border text-sm">ยกเลิก</button>
+        <button type="button" onclick="closeModal('menu-modal')" class="flex-1 py-2.5 rounded-xl border border-slate-300 text-sm">ยกเลิก</button>
         <button type="button" onclick="saveMenuEditor()" class="flex-1 py-2.5 rounded-xl bg-sky-600 text-white text-sm font-semibold">บันทึกเมนู</button>
       </div>
     </div>
@@ -249,17 +282,17 @@
       <h3 id="single-title" class="text-lg font-bold text-[#0f294a]">เปลี่ยนรูปภาพ</h3>
       <div>
         <label class="block text-xs font-semibold text-slate-700 mb-1">1. เลือกรูปจากเครื่อง / สมาร์ทโฟน</label>
-        <input type="file" id="single-file" accept="image/*" onchange="processFile(this, 'single-preview')" class="block w-full text-sm border border-slate-300 rounded-xl p-1.5">
+        <input type="file" id="single-file" accept="image/*" onchange="processFile(this, 'single-preview')" class="block w-full text-sm text-slate-700 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-sky-600 file:text-white hover:file:bg-sky-700 border border-slate-300 rounded-xl p-1.5">
       </div>
       <div>
         <label class="block text-xs font-semibold text-slate-700 mb-1">2. หรือวางลิงก์ URL รูปภาพ</label>
         <input type="text" id="single-url" placeholder="https://..." oninput="document.getElementById('single-preview').src=this.value" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs">
       </div>
       <div class="h-40 bg-slate-100 rounded-xl flex items-center justify-center overflow-hidden border">
-        <img id="single-preview" src="" class="max-h-full max-w-full object-contain">
+        <img id="single-preview" src="" alt="ตัวอย่างภาพ" class="max-h-full max-w-full object-contain">
       </div>
       <div class="flex gap-2">
-        <button type="button" onclick="closeModal('single-modal')" class="flex-1 py-2.5 rounded-xl border text-sm">ยกเลิก</button>
+        <button type="button" onclick="closeModal('single-modal')" class="flex-1 py-2.5 rounded-xl border border-slate-300 text-sm">ยกเลิก</button>
         <button type="button" onclick="saveSingleImg()" id="btn-single-save" class="flex-1 py-2.5 rounded-xl bg-sky-600 text-white text-sm font-semibold">อัปโหลดและบันทึก</button>
       </div>
     </div>
@@ -272,14 +305,14 @@
       <div id="item-fields" class="space-y-2.5"></div>
       <div>
         <label class="block text-xs font-semibold mb-1">เลือกรูปภาพจากเครื่อง / สมาร์ทโฟน</label>
-        <input type="file" id="item-file" accept="image/*" onchange="processFile(this, 'item-preview')" class="block w-full text-sm border border-slate-300 rounded-xl p-1.5">
+        <input type="file" id="item-file" accept="image/*" onchange="processFile(this, 'item-preview')" class="block w-full text-sm text-slate-700 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-sky-600 file:text-white hover:file:bg-sky-700 border border-slate-300 rounded-xl p-1.5">
         <input type="text" id="item-url" placeholder="หรือวางลิงก์ URL รูปภาพ" oninput="document.getElementById('item-preview').src=this.value" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs mt-1.5">
       </div>
       <div class="h-36 bg-slate-100 rounded-xl flex items-center justify-center overflow-hidden border">
-        <img id="item-preview" src="" class="max-h-full max-w-full object-contain">
+        <img id="item-preview" src="" alt="ตัวอย่างภาพ" class="max-h-full max-w-full object-contain">
       </div>
       <div class="flex gap-2 pt-2">
-        <button type="button" onclick="closeModal('item-modal')" class="flex-1 py-2.5 rounded-xl border text-sm">ยกเลิก</button>
+        <button type="button" onclick="closeModal('item-modal')" class="flex-1 py-2.5 rounded-xl border border-slate-300 text-sm">ยกเลิก</button>
         <button type="button" onclick="saveItem()" id="btn-item-save" class="flex-1 py-2.5 rounded-xl bg-sky-600 text-white text-sm font-semibold">บันทึกข้อมูล</button>
       </div>
     </div>
@@ -289,7 +322,7 @@
   <div id="reader-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50 overflow-y-auto">
     <div class="bg-white rounded-2xl max-w-xl w-full overflow-hidden shadow-2xl my-8">
       <div class="bg-slate-900 max-h-80 flex items-center justify-center">
-        <img id="r-img" src="" class="max-h-80 object-contain">
+        <img id="r-img" src="" alt="" class="max-h-80 object-contain">
       </div>
       <div class="p-6 space-y-2">
         <span id="r-badge" class="inline-block bg-sky-100 text-sky-800 text-xs font-semibold px-3 py-1 rounded-full"></span>
@@ -297,7 +330,7 @@
         <p id="r-meta" class="text-xs text-slate-500"></p>
         <p id="r-body" class="text-sm text-slate-700 whitespace-pre-line pt-2 border-t"></p>
         <div class="pt-3 text-right">
-          <button type="button" onclick="closeModal('reader-modal')" class="px-4 py-2 rounded-xl bg-slate-800 text-white text-sm">ปิด</button>
+          <button type="button" onclick="closeModal('reader-modal')" class="px-4 py-2 rounded-xl bg-slate-800 text-white text-sm">ปิดหน้าต่าง</button>
         </div>
       </div>
     </div>
@@ -361,11 +394,10 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       renderAll();
-      // ดึงข้อมูลล่าสุดจาก Google Sheets ผ่าน JSONP ทันทีที่เปิดเว็บ (ทุกเครื่องจะเห็นข้อมูลตรงกัน)
       loadFromSheetJSONP(false);
     });
 
-    // ดึงข้อมูลจาก Google Sheets ด้วย JSONP (แก้ปัญหาเปิดเครื่องอื่นแล้วข้อมูลไม่เปลี่ยน)
+    // ดึงข้อมูลจาก Google Sheets ด้วย JSONP (ซิงค์ตรงกันทุกเครื่องบน GitHub Pages)
     function loadFromSheetJSONP(notify) {
       const banner = document.getElementById('sync-banner');
       if (banner) banner.classList.remove('hidden');
@@ -388,17 +420,17 @@
           if (Array.isArray(d.congratulations) && d.congratulations.length > 0) siteData.congratulations = d.congratulations;
           if (Array.isArray(d.news) && d.news.length > 0) siteData.news = d.news;
           renderAll();
-          if (notify) alert('ซิงค์ข้อมูลล่าสุดจาก Google Sheets เรียบร้อยแล้ว');
+          if (notify) Swal.fire({ icon: 'success', title: 'ซิงค์ข้อมูลล่าสุดเรียบร้อย', timer: 1500, showConfirmButton: false });
         }
       };
 
       script.onerror = function() {
         if (banner) banner.classList.add('hidden');
         delete window[cbName];
-        if (notify) alert('ไม่สามารถเชื่อมต่อ Google Sheets ได้ กรุณาตรวจสอบการ Deploy Apps Script');
+        if (notify) Swal.fire('เชื่อมต่อไม่สำเร็จ', 'กรุณาตรวจสอบการ Deploy Apps Script เป็นเวอร์ชันล่าสุด', 'error');
       };
 
-      script.src = GAS_URL + '?mode=api&callback=' + cbName + '&t=' + Date.now();
+      script.src = GAS_URL + '?callback=' + cbName + '&t=' + Date.now();
       document.body.appendChild(script);
     }
 
@@ -420,7 +452,6 @@
       }
     }
 
-    // ตรวจสอบรหัสผ่านกับ Server (รหัส.gs) โดยไม่ฝังรหัสในหน้าเว็บ
     async function loginAdmin() {
       const pass = document.getElementById('pass-input').value.trim();
       if (!pass) return;
@@ -440,11 +471,12 @@
           document.body.classList.add('is-admin');
           closeModal('login-modal');
           renderAll();
+          Swal.fire({ icon: 'success', title: 'เข้าสู่โหมดผู้ดูแลระบบ', timer: 1400, showConfirmButton: false });
         } else {
-          alert('รหัสผ่านไม่ถูกต้อง');
+          Swal.fire('รหัสผ่านไม่ถูกต้อง', 'กรุณาลองใหม่อีกครั้ง', 'error');
         }
       } catch (e) {
-        alert('ไม่สามารถติดต่อเซิร์ฟเวอร์ตรวจสอบรหัสผ่านได้');
+        Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ตรวจสอบสิทธิ์ได้', 'error');
       } finally {
         btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ';
       }
@@ -470,7 +502,6 @@
       pendingBase64 = null;
     }
 
-    // ปรับแต่งเมนูและไอคอน
     function getMenus() {
       try {
         const parsed = JSON.parse(siteData.settings.menusJson);
@@ -518,7 +549,6 @@
       `).join('');
     }
 
-    // ย่อรูปภาพ 800px ก่อนอัปโหลดขึ้น Drive
     function processFile(input, previewId) {
       const file = input.files && input.files[0];
       if (!file) return;
@@ -576,20 +606,29 @@
         renderAll();
         closeModal('single-modal');
         await saveAllToSheet(true);
+        Swal.fire({ icon: 'success', title: 'อัปเดตรูปภาพเรียบร้อย', timer: 1400, showConfirmButton: false });
       } catch (err) {
-        alert('อัปโหลดรูปไม่สำเร็จ: ' + err.message);
+        Swal.fire('อัปโหลดรูปไม่สำเร็จ', err.message, 'error');
       } finally {
         btn.disabled = false; btn.textContent = 'อัปโหลดและบันทึก';
       }
     }
 
     function editSetting(key, label) {
-      const val = prompt(label, siteData.settings[key] || '');
-      if (val !== null && val.trim() !== '') {
-        siteData.settings[key] = val.trim();
-        renderAll();
-        saveAllToSheet(true);
-      }
+      Swal.fire({
+        title: label,
+        input: 'textarea',
+        inputValue: siteData.settings[key] || '',
+        showCancelButton: true,
+        confirmButtonText: 'บันทึก',
+        cancelButtonText: 'ยกเลิก'
+      }).then(result => {
+        if (result.isConfirmed && result.value.trim() !== '') {
+          siteData.settings[key] = result.value.trim();
+          renderAll();
+          saveAllToSheet(true);
+        }
+      });
     }
 
     const FIELDS = {
@@ -638,18 +677,29 @@
         renderAll();
         closeModal('item-modal');
         await saveAllToSheet(true);
+        Swal.fire({ icon: 'success', title: 'บันทึกข้อมูลเรียบร้อย', timer: 1400, showConfirmButton: false });
       } catch (err) {
-        alert('บันทึกไม่สำเร็จ: ' + err.message);
+        Swal.fire('บันทึกไม่สำเร็จ', err.message, 'error');
       } finally {
         btn.disabled = false; btn.textContent = 'บันทึกข้อมูล';
       }
     }
 
     function delItem(sec, idx) {
-      if (!confirm('ยืนยันการลบรายการนี้?')) return;
-      siteData[sec].splice(idx, 1);
-      renderAll();
-      saveAllToSheet(true);
+      Swal.fire({
+        title: 'ยืนยันการลบรายการนี้?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        confirmButtonText: 'ลบรายการ',
+        cancelButtonText: 'ยกเลิก'
+      }).then(res => {
+        if (res.isConfirmed) {
+          siteData[sec].splice(idx, 1);
+          renderAll();
+          saveAllToSheet(true);
+        }
+      });
     }
 
     function openReader(badge, title, meta, body, img) {
@@ -802,12 +852,16 @@
         });
         const json = await res.json();
         if (!silent) {
-          alert(json.status === 'success' ? 'บันทึกข้อมูลทั้งหมดลง Google Sheets เรียบร้อยแล้ว!' : 'เกิดข้อผิดพลาด: ' + json.message);
+          if (json.status === 'success') {
+            Swal.fire({ icon: 'success', title: 'บันทึกข้อมูลลง Google Sheets เรียบร้อย', timer: 1500, showConfirmButton: false });
+          } else {
+            Swal.fire('บันทึกไม่สำเร็จ', json.message, 'error');
+          }
         }
       } catch (e) {
-        if (!silent) alert('บันทึกไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต');
+        if (!silent) Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถส่งข้อมูลไปที่ Google Sheets ได้', 'error');
       } finally {
-        if (btn) btn.textContent = '💾 บันทึกลงชีต';
+        if (btn) btn.textContent = '💾 บันทึกทั้งหมดลงชีต';
       }
     }
   </script>
