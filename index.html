@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="th" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>กลุ่มการพยาบาล สถาบันบำราศนราดูร | BIDI Nursing Department</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=Sarabun:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Sarabun', sans-serif; background-color: #f8fafc; color: #1e293b; }
+    h1, h2, h3, h4, .font-display { font-family: 'Prompt', sans-serif; }
+    .admin-only { display: none; }
+    body.is-admin .admin-only { display: inline-flex; }
+    .admin-block { display: none; }
+    body.is-admin .admin-block { display: block; }
+  </style>
+</head>
+<body class="antialiased">
+
+  <!-- แถบแจ้งสถานะการซิงค์ข้อมูลจาก Google Sheets -->
+  <div id="sync-banner" class="hidden bg-sky-900 text-sky-100 text-xs text-center py-1 px-4 font-display">
+    ⏳ กำลังซิงค์ข้อมูลล่าสุดจากฐานข้อมูลกลาง...
+  </div>
+
+  <!-- แถบเครื่องมือผู้ดูแลระบบ (แสดงเฉพาะเมื่อล็อกอินแล้ว เลื่อนตามหน้าจอ) -->
+  <div class="admin-block bg-amber-400 text-slate-950 px-4 py-2.5 shadow">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm font-display">
+      <div class="font-bold">🔑 โหมดผู้ดูแลระบบ (แก้ไขรูปหน้าปก เมนู ไอคอน และข้อมูลได้ทันที)</div>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" onclick="openMenuEditor()" class="bg-sky-700 hover:bg-sky-800 text-white px-3 py-1.5 rounded-lg text-xs font-medium">⚙️ แก้ไขชื่อ/ไอคอนเมนู</button>
+        <button type="button" onclick="saveAllToSheet(false)" id="btn-save-all" class="bg-slate-900 hover:bg-slate-800 text-white px-3.5 py-1.5 rounded-lg text-xs font-medium">💾 บันทึกลงชีต</button>
+        <button type="button" onclick="loadFromSheetJSONP(true)" class="bg-white hover:bg-slate-100 text-slate-900 px-3 py-1.5 rounded-lg text-xs font-medium">🔄 ดึงข้อมูลล่าสุด</button>
+        <button type="button" onclick="logoutAdmin()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium">ออกจากแอดมิน</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ส่วนหัวเว็บไซต์ (Responsive สมาร์ทโฟน + เมนูชิดขวามือ) -->
+  <header class="bg-white border-b border-slate-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+      <div class="flex items-center justify-between gap-3">
+        <!-- โลโก้สถาบัน (ซ่อนทางเข้าแอดมิน) + ชื่อหน่วยงาน -->
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="relative shrink-0">
+            <button type="button" onclick="onLogoClick()" title="กลุ่มการพยาบาล สถาบันบำราศนราดูร" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-sky-50 border border-sky-200 flex items-center justify-center overflow-hidden shadow-sm hover:ring-2 hover:ring-sky-400">
+              <img id="site-logo-img" src="" alt="โลโก้สถาบัน" class="w-full h-full object-contain hidden">
+              <svg id="site-logo-svg" viewBox="0 0 100 100" class="w-9 h-9 sm:w-11 sm:h-11">
+                <circle cx="50" cy="50" r="46" fill="#0f294a"/>
+                <path d="M50 22 L50 78 M32 50 L68 50" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+                <circle cx="50" cy="50" r="10" fill="#0284c7"/>
+                <text x="50" y="90" text-anchor="middle" fill="#fbbf24" font-size="11" font-weight="bold">BIDI</text>
+              </svg>
+            </button>
+            <button type="button" onclick="openSingleImg('siteLogo', 'เปลี่ยนโลโก้สถาบัน')" class="admin-only absolute -bottom-1 -right-1 w-6 h-6 bg-amber-400 text-slate-900 rounded-full items-center justify-center shadow border border-white text-[11px]">📷</button>
+          </div>
+
+          <div class="min-w-0">
+            <h1 class="text-base sm:text-xl lg:text-2xl font-bold text-[#0f294a] truncate">
+              กลุ่มการพยาบาล สถาบันบำราศนราดูร
+            </h1>
+            <p class="text-[11px] sm:text-xs text-sky-700 font-medium truncate">
+              BIDI Nursing Department | กรมควบคุมโรค
+            </p>
+          </div>
+        </div>
+
+        <!-- ปุ่มเปิดเมนูบนสมาร์ทโฟน (ชิดขวามือ) -->
+        <button type="button" onclick="toggleMobileMenu()" aria-label="เปิดเมนู" class="lg:hidden shrink-0 inline-flex items-center justify-center p-2.5 rounded-xl bg-sky-50 text-[#0f294a] border border-sky-200 hover:bg-sky-100">
+          <svg id="icon-hamburger" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+          <svg id="icon-close" class="w-6 h-6 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+
+        <!-- แถบเมนูบนหน้าจอ PC (เรียงชิดขวามือ) -->
+        <nav id="desktop-nav" class="hidden lg:flex items-center justify-end gap-1 text-sm font-display font-medium"></nav>
+      </div>
+
+      <!-- เมนูดรอปดาวน์บนสมาร์ทโฟน (เรียงชิดขวามือ สวยงาม อ่านง่าย) -->
+      <div id="mobile-menu-panel" class="hidden lg:hidden mt-3 pt-3 border-t border-slate-100">
+        <nav id="mobile-nav" class="flex flex-col items-end gap-1.5 text-sm font-display font-medium"></nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- 1. แบนเนอร์หลัก (รูปหน้าปก + ข้อความ) -->
+  <section id="home" class="bg-gradient-to-br from-[#0f294a] via-[#163a66] to-[#0284c7] text-white py-10 sm:py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+      <div class="lg:col-span-7 space-y-4">
+        <span class="inline-block bg-sky-500/20 border border-sky-300/30 text-sky-200 text-xs font-display px-3 py-1 rounded-full">
+          ศูนย์ความเป็นเลิศทางการพยาบาลโรคติดเชื้อและโรคอุบัติใหม่
+        </span>
+        <div class="flex items-start gap-2">
+          <h2 id="hero-title" class="text-2xl sm:text-4xl font-bold leading-tight">
+            มุ่งมั่นพัฒนาคุณภาพการพยาบาล สู่มาตรฐานสากลด้วยหัวใจความเป็นมนุษย์
+          </h2>
+          <button type="button" onclick="editSetting('heroTitle', 'แก้ไขหัวข้อหน้าปก')" class="admin-only shrink-0 bg-amber-400 text-slate-900 p-1.5 rounded-lg text-xs">✏️</button>
+        </div>
+        <div class="flex items-start gap-2">
+          <p id="hero-subtitle" class="text-sky-100 text-sm sm:text-lg leading-relaxed">
+            ให้บริการพยาบาลผู้ป่วยโรคติดเชื้อ โรคอุบัติใหม่ และผู้ป่วยเฉพาะทางอย่างปลอดภัย ได้มาตรฐานวิชาชีพ พร้อมขับเคลื่อนนวัตกรรมและงานวิจัยทางการพยาบาล
+          </p>
+          <button type="button" onclick="editSetting('heroSubtitle', 'แก้ไขคำโปรยหน้าปก')" class="admin-only shrink-0 bg-amber-400 text-slate-900 p-1.5 rounded-lg text-xs">✏️</button>
+        </div>
+      </div>
+
+      <!-- รูปหน้าปก -->
+      <div class="lg:col-span-5">
+        <div class="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20 aspect-[16/10] bg-slate-800">
+          <img id="hero-img" src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=900&q=80" alt="รูปหน้าปกกลุ่มการพยาบาล" class="w-full h-full object-cover">
+          <button type="button" onclick="openSingleImg('heroImg', 'เปลี่ยนรูปหน้าปกเว็บไซต์')" class="admin-only absolute bottom-3 right-3 bg-amber-400 hover:bg-amber-500 text-slate-900 font-display font-semibold px-3.5 py-2 rounded-xl shadow text-xs items-center gap-1">
+            📷 เปลี่ยนรูปหน้าปก
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. ผู้บริหารและทีมบริหาร -->
+  <section id="executives" class="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-8">
+      <h2 class="text-2xl sm:text-3xl font-bold text-[#0f294a]">ผู้บริหารและทีมบริหารกลุ่มการพยาบาล</h2>
+      <p class="text-slate-600 text-sm mt-1">โครงสร้างการบริหารงานกลุ่มการพยาบาล สถาบันบำราศนราดูร</p>
+    </div>
+
+    <!-- หัวหน้ากลุ่มการพยาบาล -->
+    <div class="max-w-md mx-auto bg-white rounded-2xl shadow-md border border-slate-200 p-6 text-center">
+      <div class="relative w-32 h-32 mx-auto mb-4">
+        <img id="chief-img" src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=400&q=80" alt="หัวหน้ากลุ่มการพยาบาล" class="w-full h-full object-cover rounded-full border-4 border-sky-100 shadow">
+        <button type="button" onclick="openSingleImg('chiefImg', 'เปลี่ยนรูปหัวหน้ากลุ่มการพยาบาล')" class="admin-only absolute bottom-0 right-0 w-8 h-8 bg-amber-400 text-slate-900 rounded-full items-center justify-center shadow border-2 border-white text-xs">📷</button>
+      </div>
+      <div class="flex items-center justify-center gap-1.5">
+        <h3 id="chief-name" class="text-lg font-bold text-[#0f294a]">หัวหน้ากลุ่มการพยาบาล</h3>
+        <button type="button" onclick="editSetting('chiefName', 'แก้ไขชื่อหัวหน้ากลุ่มการพยาบาล')" class="admin-only text-amber-600 text-xs">✏️</button>
+      </div>
+      <div class="flex items-center justify-center gap-1.5 mt-1">
+        <p id="chief-position" class="text-sm font-medium text-sky-700">พยาบาลวิชาชีพเชี่ยวชาญ (ด้านการพยาบาล)</p>
+        <button type="button" onclick="editSetting('chiefPosition', 'แก้ไขตำแหน่ง')" class="admin-only text-amber-600 text-xs">✏️</button>
+      </div>
+      <div class="flex items-center justify-center gap-1.5 mt-2">
+        <p id="chief-quote" class="text-xs text-slate-500 italic">"พยาบาลบำราศฯ ร่วมใจ พัฒนาคุณภาพบริการ ปลอดภัยได้มาตรฐาน"</p>
+        <button type="button" onclick="editSetting('chiefQuote', 'แก้ไขข้อความ')" class="admin-only text-amber-600 text-xs">✏️</button>
+      </div>
+    </div>
+
+    <div class="w-0.5 h-8 bg-sky-200 mx-auto"></div>
+    <div class="max-w-4xl mx-auto border-t-2 border-sky-200 mb-6"></div>
+
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-base sm:text-lg font-bold text-[#0f294a]">คณะกรรมการบริหารกลุ่มการพยาบาล</h3>
+      <button type="button" onclick="openItemModal('executives')" class="admin-only bg-sky-600 text-white px-3.5 py-2 rounded-xl text-xs font-medium shadow">+ เพิ่มตำแหน่งทีมบริหาร</button>
+    </div>
+    <div id="executives-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4"></div>
+  </section>
+
+  <!-- 3. หน่วยงานในสังกัด -->
+  <section id="units" class="py-12 bg-white border-y border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl sm:text-2xl font-bold text-[#0f294a]">หน่วยงานในสังกัดกลุ่มการพยาบาล</h2>
+        <button type="button" onclick="openItemModal('units')" class="admin-only bg-sky-600 text-white px-4 py-2 rounded-xl text-xs font-medium shadow">+ เพิ่มหน่วยงาน</button>
+      </div>
+      <div id="units-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+    </div>
+  </section>
+
+  <!-- 4. อัลบั้มกิจกรรม -->
+  <section id="albums" class="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-xl sm:text-2xl font-bold text-[#0f294a]">อัลบั้มภาพกิจกรรมและวิชาการ</h2>
+      <button type="button" onclick="openItemModal('albums')" class="admin-only bg-sky-600 text-white px-4 py-2 rounded-xl text-xs font-medium shadow">+ สร้างอัลบั้มใหม่</button>
+    </div>
+    <div id="albums-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+  </section>
+
+  <!-- 5. คำชมเชยบุคลากร -->
+  <section id="compliments" class="py-12 bg-sky-50/70 border-y border-sky-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl sm:text-2xl font-bold text-[#0f294a]">คำชมเชยบุคลากร / เสียงจากผู้รับบริการ</h2>
+        <button type="button" onclick="openItemModal('compliments')" class="admin-only bg-sky-600 text-white px-4 py-2 rounded-xl text-xs font-medium shadow">+ เพิ่มคำชมเชย</button>
+      </div>
+      <div id="compliments-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+    </div>
+  </section>
+
+  <!-- 6. ร่วมแสดงความยินดี -->
+  <section id="congratulations" class="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-xl sm:text-2xl font-bold text-[#0f294a]">ร่วมแสดงความยินดีกับบุคลากร</h2>
+      <button type="button" onclick="openItemModal('congratulations')" class="admin-only bg-amber-500 text-slate-950 px-4 py-2 rounded-xl text-xs font-semibold shadow">+ เพิ่มความยินดี</button>
+    </div>
+    <div id="congratulations-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+  </section>
+
+  <!-- 7. ประกาศสำคัญ -->
+  <section id="news" class="py-12 bg-white border-t border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl sm:text-2xl font-bold text-[#0f294a]">ประกาศสำคัญและข่าวประชาสัมพันธ์</h2>
+        <button type="button" onclick="openItemModal('news')" class="admin-only bg-sky-600 text-white px-4 py-2 rounded-xl text-xs font-medium shadow">+ เพิ่มประกาศ</button>
+      </div>
+      <div id="news-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+    </div>
+  </section>
+
+  <!-- 8. ติดต่อเรา -->
+  <footer id="contact" class="bg-[#0f294a] text-slate-300 py-8 text-center md:text-left">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
+      <div>
+        <h3 class="text-white font-bold">กลุ่มการพยาบาล สถาบันบำราศนราดูร</h3>
+        <p class="text-xs text-slate-400 mt-1">38 ถ.ติวานนท์ ต.ตลาดขวัญ อ.เมือง จ.นนทบุรี 11000 | โทร. 02-590-3402</p>
+      </div>
+      <p class="text-xs text-slate-400">© 2026 BIDI Nursing Department | กรมควบคุมโรค กระทรวงสาธารณสุข</p>
+    </div>
+  </footer>
+
+  <!-- Modal 1: Login (ไม่มีคำใบ้รหัสผ่าน) -->
+  <div id="login-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-xs w-full p-6 shadow-2xl">
+      <h3 class="text-lg font-bold text-[#0f294a] mb-1">เข้าสู่ระบบผู้ดูแล</h3>
+      <p class="text-xs text-slate-500 mb-4">กรุณาระบุรหัสผ่านสำหรับเจ้าหน้าที่ดูแลเว็บไซต์</p>
+      <input type="password" id="pass-input" placeholder="••••••" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-center text-lg tracking-widest mb-4 focus:outline-none focus:ring-2 focus:ring-sky-500">
+      <div class="flex gap-2">
+        <button type="button" onclick="closeModal('login-modal')" class="flex-1 py-2.5 rounded-xl border text-sm">ยกเลิก</button>
+        <button type="button" onclick="loginAdmin()" id="btn-login" class="flex-1 py-2.5 rounded-xl bg-[#0f294a] text-white text-sm font-semibold">เข้าสู่ระบบ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: แก้ไขชื่อและไอคอนเมนู -->
+  <div id="menu-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50 overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 my-8">
+      <h3 class="text-lg font-bold text-[#0f294a]">⚙️ ปรับแต่งไอคอนและชื่อเมนู</h3>
+      <p class="text-xs text-slate-500">สามารถเปลี่ยนไอคอน (อีโมจิหรือข้อความย่อ) และชื่อเมนูแต่ละหัวข้อได้ตามต้องการ</p>
+      <div id="menu-editor-list" class="space-y-2.5 max-h-80 overflow-y-auto pr-1"></div>
+      <div class="flex gap-2 pt-2">
+        <button type="button" onclick="closeModal('menu-modal')" class="flex-1 py-2.5 rounded-xl border text-sm">ยกเลิก</button>
+        <button type="button" onclick="saveMenuEditor()" class="flex-1 py-2.5 rounded-xl bg-sky-600 text-white text-sm font-semibold">บันทึกเมนู</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: Single Image (โลโก้ / รูปหน้าปก / หัวหน้าพยาบาล) -->
+  <div id="single-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+      <h3 id="single-title" class="text-lg font-bold text-[#0f294a]">เปลี่ยนรูปภาพ</h3>
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 mb-1">1. เลือกรูปจากเครื่อง / สมาร์ทโฟน</label>
+        <input type="file" id="single-file" accept="image/*" onchange="processFile(this, 'single-preview')" class="block w-full text-sm border border-slate-300 rounded-xl p-1.5">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 mb-1">2. หรือวางลิงก์ URL รูปภาพ</label>
+        <input type="text" id="single-url" placeholder="https://..." oninput="document.getElementById('single-preview').src=this.value" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs">
+      </div>
+      <div class="h-40 bg-slate-100 rounded-xl flex items-center justify-center overflow-hidden border">
+        <img id="single-preview" src="" class="max-h-full max-w-full object-contain">
+      </div>
+      <div class="flex gap-2">
+        <button type="button" onclick="closeModal('single-modal')" class="flex-1 py-2.5 rounded-xl border text-sm">ยกเลิก</button>
+        <button type="button" onclick="saveSingleImg()" id="btn-single-save" class="flex-1 py-2.5 rounded-xl bg-sky-600 text-white text-sm font-semibold">อัปโหลดและบันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 4: Item Form -->
+  <div id="item-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50 overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-3 my-8">
+      <h3 id="item-title" class="text-lg font-bold text-[#0f294a]">จัดการข้อมูล</h3>
+      <div id="item-fields" class="space-y-2.5"></div>
+      <div>
+        <label class="block text-xs font-semibold mb-1">เลือกรูปภาพจากเครื่อง / สมาร์ทโฟน</label>
+        <input type="file" id="item-file" accept="image/*" onchange="processFile(this, 'item-preview')" class="block w-full text-sm border border-slate-300 rounded-xl p-1.5">
+        <input type="text" id="item-url" placeholder="หรือวางลิงก์ URL รูปภาพ" oninput="document.getElementById('item-preview').src=this.value" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs mt-1.5">
+      </div>
+      <div class="h-36 bg-slate-100 rounded-xl flex items-center justify-center overflow-hidden border">
+        <img id="item-preview" src="" class="max-h-full max-w-full object-contain">
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button type="button" onclick="closeModal('item-modal')" class="flex-1 py-2.5 rounded-xl border text-sm">ยกเลิก</button>
+        <button type="button" onclick="saveItem()" id="btn-item-save" class="flex-1 py-2.5 rounded-xl bg-sky-600 text-white text-sm font-semibold">บันทึกข้อมูล</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 5: Reader -->
+  <div id="reader-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50 overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-xl w-full overflow-hidden shadow-2xl my-8">
+      <div class="bg-slate-900 max-h-80 flex items-center justify-center">
+        <img id="r-img" src="" class="max-h-80 object-contain">
+      </div>
+      <div class="p-6 space-y-2">
+        <span id="r-badge" class="inline-block bg-sky-100 text-sky-800 text-xs font-semibold px-3 py-1 rounded-full"></span>
+        <h3 id="r-title" class="text-xl font-bold text-[#0f294a]"></h3>
+        <p id="r-meta" class="text-xs text-slate-500"></p>
+        <p id="r-body" class="text-sm text-slate-700 whitespace-pre-line pt-2 border-t"></p>
+        <div class="pt-3 text-right">
+          <button type="button" onclick="closeModal('reader-modal')" class="px-4 py-2 rounded-xl bg-slate-800 text-white text-sm">ปิด</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbzzND8Kvi6-YsuCiQjrviN778yy-6Be2ANHot7YM11IZQMmKyqMgU5cw9-GGuchM6pA/exec';
+    let sessionPassword = '';
+    let isAdmin = false;
+    let pendingBase64 = null;
+    let curTarget = '';
+    let curSection = '';
+    let curIdx = -1;
+
+    const DEFAULT_MENUS = [
+      { id: 'home', icon: '🏠', label: 'หน้าหลัก' },
+      { id: 'executives', icon: '👩‍⚕️', label: 'ทีมบริหาร' },
+      { id: 'units', icon: '🏥', label: 'หน่วยงาน' },
+      { id: 'albums', icon: '📸', label: 'กิจกรรม' },
+      { id: 'compliments', icon: '💐', label: 'คำชมเชย' },
+      { id: 'congratulations', icon: '🏆', label: 'แสดงความยินดี' },
+      { id: 'news', icon: '📢', label: 'ประกาศสำคัญ' },
+      { id: 'contact', icon: '📞', label: 'ติดต่อเรา' }
+    ];
+
+    let siteData = {
+      settings: {
+        siteLogo: '',
+        menusJson: JSON.stringify(DEFAULT_MENUS),
+        heroTitle: 'มุ่งมั่นพัฒนาคุณภาพการพยาบาล สู่มาตรฐานสากลด้วยหัวใจความเป็นมนุษย์',
+        heroSubtitle: 'ให้บริการพยาบาลผู้ป่วยโรคติดเชื้อ โรคอุบัติใหม่ และผู้ป่วยเฉพาะทางอย่างปลอดภัย ได้มาตรฐานวิชาชีพ พร้อมขับเคลื่อนนวัตกรรมและงานวิจัยทางการพยาบาล',
+        heroImg: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=900&q=80',
+        chiefImg: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=400&q=80',
+        chiefName: 'หัวหน้ากลุ่มการพยาบาล',
+        chiefPosition: 'พยาบาลวิชาชีพเชี่ยวชาญ (ด้านการพยาบาล)',
+        chiefQuote: '"พยาบาลบำราศฯ ร่วมใจ พัฒนาคุณภาพบริการ ปลอดภัยได้มาตรฐาน"'
+      },
+      executives: [
+        { id: 'ex1', name: 'รองหัวหน้ากลุ่มการพยาบาล', position: 'ด้านวิชาการและวิจัย', bio: 'กำกับดูแลมาตรฐานวิชาการ CQI / R2R', imageUrl: 'https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&w=300&q=80' },
+        { id: 'ex2', name: 'รองหัวหน้ากลุ่มการพยาบาล', position: 'ด้านบริการพยาบาล', bio: 'บริหารอัตรากำลังและคุณภาพบริการ', imageUrl: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&w=300&q=80' },
+        { id: 'ex3', name: 'รองหัวหน้ากลุ่มการพยาบาล', position: 'ด้านพัฒนาคุณภาพ (HA)', bio: 'ขับเคลื่อนคุณภาพและสารสนเทศ', imageUrl: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=300&q=80' },
+        { id: 'ex4', name: 'หัวหน้างานผู้ป่วยนอก', position: 'กลุ่มงาน OPD', bio: 'ดูแลระบบบริการผู้ป่วยนอก', imageUrl: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=300&q=80' },
+        { id: 'ex5', name: 'หัวหน้าหน่วยบริการเฉพาะทาง', position: 'หน่วยไตเทียม', bio: 'ดูแลผู้ป่วยฟอกเลือดด้วยเครื่องไตเทียม', imageUrl: 'https://images.unsplash.com/photo-1582750433449-648ed127bb54?auto=format&fit=crop&w=300&q=80' }
+      ],
+      units: [
+        { id: 'u1', name: 'หน่วยไตเทียม (Hemodialysis Unit)', category: 'บริการเฉพาะทาง', headName: 'พว.อ้อมอารีย์ พุทธาวันดี', phone: 'ต่อ 3402', description: 'ให้บริการฟอกเลือดด้วยเครื่องไตเทียมมาตรฐานสูง พร้อมห้องแยกโรคติดเชื้อและระบบ Smart Nursing Tools', imageUrl: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=600&q=80' }
+      ],
+      albums: [
+        { id: 'a1', title: 'ประชุมวิชาการและนำเสนอผลงาน CQI กลุ่มการพยาบาล', category: 'วิชาการ', date: 'พ.ย. 2026', description: 'นำเสนอผลงานนวัตกรรมและวิจัยทางการพยาบาล', coverUrl: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=600&q=80' }
+      ],
+      compliments: [
+        { id: 'c1', staffOrUnit: 'ทีมพยาบาลหน่วยไตเทียม', badge: 'บริการด้วยหัวใจ', message: 'ดูแลเอาใจใส่ดีมาก อธิบายชัดเจน ประทับใจการบริการครับ', sender: 'ญาติผู้รับบริการ', date: '10 พ.ย. 2026', imageUrl: 'https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=600&q=80' }
+      ],
+      congratulations: [
+        { id: 'g1', personName: 'บุคลากรดีเด่นกลุ่มการพยาบาล', awardType: 'รางวัลพยาบาลดีเด่น', title: 'ขอแสดงความยินดีในโอกาสได้รับรางวัลพยาบาลดีเด่น ด้านวิชาการ', detail: 'กลุ่มการพยาบาลขอแสดงความยินดีและชื่นชมในความมุ่งมั่นพัฒนางานวิชาการ', date: 'ต.ค. 2026', imageUrl: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=600&q=80' }
+      ],
+      news: [
+        { id: 'n1', type: 'ประกาศสำคัญ', title: 'แนวทางการส่งผลงานพัฒนาคุณภาพ (CQI) และงานวิจัย R2R', summary: 'เชิญชวนหน่วยงานในสังกัดส่งผลงานวิชาการผ่านระบบออนไลน์', detail: 'เปิดรับผลงาน CQI และ R2R ประจำปี สามารถส่งบทคัดย่อได้ตั้งแต่บัดนี้', date: '18 พ.ย. 2026', imageUrl: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=600&q=80' }
+      ]
+    };
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderAll();
+      // ดึงข้อมูลล่าสุดจาก Google Sheets ผ่าน JSONP ทันทีที่เปิดเว็บ (ทุกเครื่องจะเห็นข้อมูลตรงกัน)
+      loadFromSheetJSONP(false);
+    });
+
+    // ดึงข้อมูลจาก Google Sheets ด้วย JSONP (แก้ปัญหาเปิดเครื่องอื่นแล้วข้อมูลไม่เปลี่ยน)
+    function loadFromSheetJSONP(notify) {
+      const banner = document.getElementById('sync-banner');
+      if (banner) banner.classList.remove('hidden');
+
+      const cbName = 'bidiJsonpCb_' + Date.now();
+      const script = document.createElement('script');
+
+      window[cbName] = function(json) {
+        if (banner) banner.classList.add('hidden');
+        delete window[cbName];
+        if (script.parentNode) script.parentNode.removeChild(script);
+
+        if (json && json.status === 'success' && json.data) {
+          const d = json.data;
+          if (d.settings && Object.keys(d.settings).length > 0) siteData.settings = { ...siteData.settings, ...d.settings };
+          if (Array.isArray(d.executives) && d.executives.length > 0) siteData.executives = d.executives;
+          if (Array.isArray(d.units) && d.units.length > 0) siteData.units = d.units;
+          if (Array.isArray(d.albums) && d.albums.length > 0) siteData.albums = d.albums;
+          if (Array.isArray(d.compliments) && d.compliments.length > 0) siteData.compliments = d.compliments;
+          if (Array.isArray(d.congratulations) && d.congratulations.length > 0) siteData.congratulations = d.congratulations;
+          if (Array.isArray(d.news) && d.news.length > 0) siteData.news = d.news;
+          renderAll();
+          if (notify) alert('ซิงค์ข้อมูลล่าสุดจาก Google Sheets เรียบร้อยแล้ว');
+        }
+      };
+
+      script.onerror = function() {
+        if (banner) banner.classList.add('hidden');
+        delete window[cbName];
+        if (notify) alert('ไม่สามารถเชื่อมต่อ Google Sheets ได้ กรุณาตรวจสอบการ Deploy Apps Script');
+      };
+
+      script.src = GAS_URL + '?mode=api&callback=' + cbName + '&t=' + Date.now();
+      document.body.appendChild(script);
+    }
+
+    function toggleMobileMenu() {
+      const panel = document.getElementById('mobile-menu-panel');
+      const isHidden = panel.classList.contains('hidden');
+      panel.classList.toggle('hidden');
+      document.getElementById('icon-hamburger').classList.toggle('hidden', isHidden);
+      document.getElementById('icon-close').classList.toggle('hidden', !isHidden);
+    }
+
+    function onLogoClick() {
+      if (!isAdmin) {
+        document.getElementById('pass-input').value = '';
+        openModal('login-modal');
+        setTimeout(() => document.getElementById('pass-input').focus(), 100);
+      } else {
+        openSingleImg('siteLogo', 'เปลี่ยนโลโก้สถาบันบำราศนราดูร');
+      }
+    }
+
+    // ตรวจสอบรหัสผ่านกับ Server (รหัส.gs) โดยไม่ฝังรหัสในหน้าเว็บ
+    async function loginAdmin() {
+      const pass = document.getElementById('pass-input').value.trim();
+      if (!pass) return;
+      const btn = document.getElementById('btn-login');
+      btn.disabled = true; btn.textContent = 'กำลังตรวจสอบ...';
+
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'verifyAdmin', password: pass })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          sessionPassword = pass;
+          isAdmin = true;
+          document.body.classList.add('is-admin');
+          closeModal('login-modal');
+          renderAll();
+        } else {
+          alert('รหัสผ่านไม่ถูกต้อง');
+        }
+      } catch (e) {
+        alert('ไม่สามารถติดต่อเซิร์ฟเวอร์ตรวจสอบรหัสผ่านได้');
+      } finally {
+        btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ';
+      }
+    }
+
+    function logoutAdmin() {
+      isAdmin = false;
+      sessionPassword = '';
+      document.body.classList.remove('is-admin');
+      renderAll();
+    }
+
+    function openModal(id) {
+      const el = document.getElementById(id);
+      el.classList.remove('hidden');
+      el.classList.add('flex');
+    }
+
+    function closeModal(id) {
+      const el = document.getElementById(id);
+      el.classList.add('hidden');
+      el.classList.remove('flex');
+      pendingBase64 = null;
+    }
+
+    // ปรับแต่งเมนูและไอคอน
+    function getMenus() {
+      try {
+        const parsed = JSON.parse(siteData.settings.menusJson);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
+      return DEFAULT_MENUS;
+    }
+
+    function openMenuEditor() {
+      const menus = getMenus();
+      document.getElementById('menu-editor-list').innerHTML = menus.map((m, idx) => `
+        <div class="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border">
+          <input type="text" id="menu-icon-${idx}" value="${m.icon}" class="w-14 text-center border rounded-lg py-1.5 text-base" title="ไอคอน">
+          <input type="text" id="menu-label-${idx}" value="${m.label}" class="flex-1 border rounded-lg px-3 py-1.5 text-sm" title="ชื่อเมนู">
+        </div>
+      `).join('');
+      openModal('menu-modal');
+    }
+
+    function saveMenuEditor() {
+      const menus = getMenus();
+      const updated = menus.map((m, idx) => ({
+        id: m.id,
+        icon: document.getElementById('menu-icon-' + idx).value.trim() || m.icon,
+        label: document.getElementById('menu-label-' + idx).value.trim() || m.label
+      }));
+      siteData.settings.menusJson = JSON.stringify(updated);
+      renderMenus();
+      closeModal('menu-modal');
+      saveAllToSheet(true);
+    }
+
+    function renderMenus() {
+      const menus = getMenus();
+      document.getElementById('desktop-nav').innerHTML = menus.map(m => `
+        <a href="#${m.id}" class="px-2.5 py-1.5 rounded-lg text-slate-700 hover:bg-sky-50 hover:text-sky-700 transition whitespace-nowrap flex items-center gap-1">
+          <span>${m.icon}</span><span>${m.label}</span>
+        </a>
+      `).join('');
+
+      document.getElementById('mobile-nav').innerHTML = menus.map(m => `
+        <a href="#${m.id}" onclick="toggleMobileMenu()" class="w-full text-right px-3 py-2 rounded-xl text-slate-700 hover:bg-sky-50 hover:text-sky-700 transition flex items-center justify-end gap-2">
+          <span>${m.label}</span><span>${m.icon}</span>
+        </a>
+      `).join('');
+    }
+
+    // ย่อรูปภาพ 800px ก่อนอัปโหลดขึ้น Drive
+    function processFile(input, previewId) {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let w = img.width, h = img.height;
+          if (w > 800) { h = Math.round(h * 800 / w); w = 800; }
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          pendingBase64 = canvas.toDataURL('image/jpeg', 0.75);
+          document.getElementById(previewId).src = pendingBase64;
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function uploadBase64ToDrive(base64Str) {
+      const res = await fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'uploadImage',
+          password: sessionPassword,
+          base64: base64Str,
+          fileName: 'bidi_' + Date.now() + '.jpg'
+        })
+      });
+      const json = await res.json();
+      if (json.status === 'success' && json.url) return json.url;
+      throw new Error(json.message || 'Upload failed');
+    }
+
+    function openSingleImg(target, title) {
+      curTarget = target; pendingBase64 = null;
+      document.getElementById('single-title').textContent = title;
+      document.getElementById('single-file').value = '';
+      document.getElementById('single-url').value = siteData.settings[target] || '';
+      document.getElementById('single-preview').src = siteData.settings[target] || '';
+      openModal('single-modal');
+    }
+
+    async function saveSingleImg() {
+      const btn = document.getElementById('btn-single-save');
+      btn.disabled = true; btn.textContent = '⏳ กำลังอัปโหลดขึ้น Drive...';
+      try {
+        let finalUrl = document.getElementById('single-url').value.trim();
+        if (pendingBase64) {
+          finalUrl = await uploadBase64ToDrive(pendingBase64);
+        }
+        siteData.settings[curTarget] = finalUrl;
+        renderAll();
+        closeModal('single-modal');
+        await saveAllToSheet(true);
+      } catch (err) {
+        alert('อัปโหลดรูปไม่สำเร็จ: ' + err.message);
+      } finally {
+        btn.disabled = false; btn.textContent = 'อัปโหลดและบันทึก';
+      }
+    }
+
+    function editSetting(key, label) {
+      const val = prompt(label, siteData.settings[key] || '');
+      if (val !== null && val.trim() !== '') {
+        siteData.settings[key] = val.trim();
+        renderAll();
+        saveAllToSheet(true);
+      }
+    }
+
+    const FIELDS = {
+      executives: [{ k: 'name', l: 'ชื่อ-สกุล' }, { k: 'position', l: 'ตำแหน่ง' }, { k: 'bio', l: 'หน้าที่รับผิดชอบ' }],
+      units: [{ k: 'name', l: 'ชื่อหน่วยงาน' }, { k: 'category', l: 'กลุ่มงาน' }, { k: 'headName', l: 'หัวหน้าหน่วยงาน' }, { k: 'phone', l: 'เบอร์โทร' }, { k: 'description', l: 'รายละเอียด', ta: true }],
+      albums: [{ k: 'title', l: 'ชื่ออัลบั้ม' }, { k: 'category', l: 'หมวดหมู่' }, { k: 'date', l: 'วันที่' }, { k: 'description', l: 'รายละเอียด', ta: true }],
+      compliments: [{ k: 'staffOrUnit', l: 'บุคลากร/หน่วยงาน' }, { k: 'badge', l: 'ป้ายเกียรติยศ' }, { k: 'message', l: 'คำชมเชย', ta: true }, { k: 'sender', l: 'ผู้มอบคำชม' }, { k: 'date', l: 'วันที่' }],
+      congratulations: [{ k: 'personName', l: 'ชื่อผู้ได้รับรางวัล/เลื่อนตำแหน่ง' }, { k: 'awardType', l: 'ประเภท' }, { k: 'title', l: 'หัวข้อ' }, { k: 'detail', l: 'รายละเอียด', ta: true }, { k: 'date', l: 'วันที่' }],
+      news: [{ k: 'type', l: 'ประเภทประกาศ' }, { k: 'title', l: 'หัวข้อ' }, { k: 'summary', l: 'ข้อความย่อ' }, { k: 'detail', l: 'รายละเอียดทั้งหมด', ta: true }, { k: 'date', l: 'วันที่' }]
+    };
+
+    function openItemModal(sec, idx = -1) {
+      curSection = sec; curIdx = idx; pendingBase64 = null;
+      document.getElementById('item-file').value = '';
+      const item = idx >= 0 ? siteData[sec][idx] : {};
+      const imgKey = sec === 'albums' ? 'coverUrl' : 'imageUrl';
+      document.getElementById('item-url').value = item[imgKey] || '';
+      document.getElementById('item-preview').src = item[imgKey] || '';
+
+      document.getElementById('item-fields').innerHTML = FIELDS[sec].map(f => `
+        <div>
+          <label class="block text-xs font-semibold mb-1">${f.l}</label>
+          ${f.ta ? `<textarea id="f-${f.k}" rows="2" class="w-full border rounded-xl px-3 py-1.5 text-sm">${item[f.k] || ''}</textarea>`
+                 : `<input type="text" id="f-${f.k}" value="${(item[f.k] || '').replace(/"/g, '&quot;')}" class="w-full border rounded-xl px-3 py-1.5 text-sm">`}
+        </div>
+      `).join('');
+      openModal('item-modal');
+    }
+
+    async function saveItem() {
+      const btn = document.getElementById('btn-item-save');
+      btn.disabled = true; btn.textContent = '⏳ กำลังบันทึก...';
+      try {
+        let finalImgUrl = document.getElementById('item-url').value.trim();
+        if (pendingBase64) {
+          finalImgUrl = await uploadBase64ToDrive(pendingBase64);
+        }
+        const obj = curIdx >= 0 ? { ...siteData[curSection][curIdx] } : { id: curSection + '_' + Date.now() };
+        FIELDS[curSection].forEach(f => { obj[f.k] = document.getElementById('f-' + f.k).value.trim(); });
+        const imgKey = curSection === 'albums' ? 'coverUrl' : 'imageUrl';
+        obj[imgKey] = finalImgUrl || 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=600&q=80';
+
+        if (curIdx >= 0) siteData[curSection][curIdx] = obj;
+        else siteData[curSection].unshift(obj);
+
+        renderAll();
+        closeModal('item-modal');
+        await saveAllToSheet(true);
+      } catch (err) {
+        alert('บันทึกไม่สำเร็จ: ' + err.message);
+      } finally {
+        btn.disabled = false; btn.textContent = 'บันทึกข้อมูล';
+      }
+    }
+
+    function delItem(sec, idx) {
+      if (!confirm('ยืนยันการลบรายการนี้?')) return;
+      siteData[sec].splice(idx, 1);
+      renderAll();
+      saveAllToSheet(true);
+    }
+
+    function openReader(badge, title, meta, body, img) {
+      document.getElementById('r-badge').textContent = badge;
+      document.getElementById('r-title').textContent = title;
+      document.getElementById('r-meta').textContent = meta;
+      document.getElementById('r-body').textContent = body;
+      document.getElementById('r-img').src = img;
+      openModal('reader-modal');
+    }
+
+    function renderAll() {
+      renderMenus();
+      const s = siteData.settings;
+      if (s.siteLogo) {
+        document.getElementById('site-logo-img').src = s.siteLogo;
+        document.getElementById('site-logo-img').classList.remove('hidden');
+        document.getElementById('site-logo-svg').classList.add('hidden');
+      }
+      document.getElementById('hero-title').textContent = s.heroTitle;
+      document.getElementById('hero-subtitle').textContent = s.heroSubtitle;
+      document.getElementById('hero-img').src = s.heroImg;
+      document.getElementById('chief-img').src = s.chiefImg;
+      document.getElementById('chief-name').textContent = s.chiefName;
+      document.getElementById('chief-position').textContent = s.chiefPosition;
+      document.getElementById('chief-quote').textContent = s.chiefQuote;
+
+      document.getElementById('executives-grid').innerHTML = siteData.executives.map((ex, i) => `
+        <div class="bg-white rounded-2xl border border-slate-200 p-3.5 text-center shadow-sm relative">
+          <div class="admin-only absolute top-2 right-2 gap-1">
+            <button type="button" onclick="openItemModal('executives', ${i})" class="bg-amber-400 text-slate-900 p-1 rounded text-xs">✏️</button>
+            <button type="button" onclick="delItem('executives', ${i})" class="bg-red-500 text-white p-1 rounded text-xs">🗑️</button>
+          </div>
+          <img src="${ex.imageUrl}" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full object-cover border-2 border-sky-100 mb-2.5">
+          <h4 class="font-bold text-xs sm:text-sm text-[#0f294a] line-clamp-1">${ex.name}</h4>
+          <p class="text-[11px] sm:text-xs text-sky-700 font-medium mt-0.5 line-clamp-2">${ex.position}</p>
+          <p class="text-[10px] sm:text-[11px] text-slate-500 mt-1 line-clamp-2">${ex.bio || ''}</p>
+        </div>
+      `).join('');
+
+      document.getElementById('units-grid').innerHTML = siteData.units.map((u, i) => `
+        <div class="bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden shadow-sm flex flex-col">
+          <div class="relative h-44 bg-slate-200">
+            <img src="${u.imageUrl}" class="w-full h-full object-cover">
+            <span class="absolute top-3 left-3 bg-[#0f294a]/90 text-white text-xs px-2.5 py-1 rounded-lg">${u.category}</span>
+            <div class="admin-only absolute top-3 right-3 gap-1">
+              <button type="button" onclick="openItemModal('units', ${i})" class="bg-amber-400 text-slate-900 px-2 py-1 rounded-lg text-xs font-semibold">แก้ไข</button>
+              <button type="button" onclick="delItem('units', ${i})" class="bg-red-600 text-white px-2 py-1 rounded-lg text-xs">ลบ</button>
+            </div>
+          </div>
+          <div class="p-5 flex-1 flex flex-col">
+            <h3 class="font-bold text-base text-[#0f294a]">${u.name}</h3>
+            <p class="text-xs text-sky-700 mt-1">หัวหน้าหน่วยงาน: ${u.headName} | โทร: ${u.phone}</p>
+            <p class="text-sm text-slate-600 mt-2 line-clamp-2 flex-1">${u.description}</p>
+            <button type="button" onclick='openReader(${JSON.stringify(u.category)}, ${JSON.stringify(u.name)}, ${JSON.stringify("หัวหน้า: " + u.headName + " | โทร: " + u.phone)}, ${JSON.stringify(u.description)}, ${JSON.stringify(u.imageUrl)})' class="mt-3 text-sky-700 text-xs font-semibold text-left">อ่านรายละเอียด →</button>
+          </div>
+        </div>
+      `).join('');
+
+      document.getElementById('albums-grid').innerHTML = siteData.albums.map((a, i) => `
+        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+          <div class="relative h-48 bg-slate-200 cursor-pointer" onclick='openReader(${JSON.stringify(a.category)}, ${JSON.stringify(a.title)}, ${JSON.stringify(a.date)}, ${JSON.stringify(a.description)}, ${JSON.stringify(a.coverUrl)})'>
+            <img src="${a.coverUrl}" class="w-full h-full object-cover">
+            <span class="absolute top-3 left-3 bg-sky-600 text-white text-xs px-2.5 py-1 rounded-lg">${a.category}</span>
+            <div class="admin-only absolute top-3 right-3 gap-1" onclick="event.stopPropagation()">
+              <button type="button" onclick="openItemModal('albums', ${i})" class="bg-amber-400 text-slate-900 px-2 py-1 rounded-lg text-xs font-semibold">แก้ไข</button>
+              <button type="button" onclick="delItem('albums', ${i})" class="bg-red-600 text-white px-2 py-1 rounded-lg text-xs">ลบ</button>
+            </div>
+          </div>
+          <div class="p-5">
+            <p class="text-xs text-slate-400">${a.date}</p>
+            <h3 class="font-bold text-base text-[#0f294a] mt-1 line-clamp-2">${a.title}</h3>
+            <p class="text-sm text-slate-600 mt-2 line-clamp-2">${a.description}</p>
+          </div>
+        </div>
+      `).join('');
+
+      document.getElementById('compliments-grid').innerHTML = siteData.compliments.map((c, i) => `
+        <div class="bg-white rounded-2xl border border-sky-100 overflow-hidden shadow-sm flex flex-col">
+          <div class="relative h-44 bg-slate-100">
+            <img src="${c.imageUrl}" class="w-full h-full object-cover">
+            <span class="absolute top-3 left-3 bg-emerald-600 text-white text-xs px-2.5 py-1 rounded-full">${c.badge}</span>
+            <div class="admin-only absolute top-3 right-3 gap-1">
+              <button type="button" onclick="openItemModal('compliments', ${i})" class="bg-amber-400 text-slate-900 px-2 py-1 rounded-lg text-xs font-semibold">แก้ไข</button>
+              <button type="button" onclick="delItem('compliments', ${i})" class="bg-red-600 text-white px-2 py-1 rounded-lg text-xs">ลบ</button>
+            </div>
+          </div>
+          <div class="p-5 flex-1 flex flex-col">
+            <h3 class="font-bold text-base text-[#0f294a]">${c.staffOrUnit}</h3>
+            <p class="text-sm text-slate-600 mt-2 line-clamp-2 italic flex-1">"${c.message}"</p>
+            <div class="mt-3 pt-3 border-t flex justify-between text-xs text-slate-500">
+              <span>โดย: ${c.sender}</span>
+              <button type="button" onclick='openReader(${JSON.stringify(c.badge)}, ${JSON.stringify(c.staffOrUnit)}, ${JSON.stringify("โดย: " + c.sender + " | " + c.date)}, ${JSON.stringify(c.message)}, ${JSON.stringify(c.imageUrl)})' class="text-sky-700 font-semibold">อ่านทั้งหมด →</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      document.getElementById('congratulations-grid').innerHTML = siteData.congratulations.map((g, i) => `
+        <div class="bg-white rounded-2xl border border-amber-200/70 overflow-hidden shadow-sm flex flex-col">
+          <div class="relative h-44 bg-amber-50">
+            <img src="${g.imageUrl}" class="w-full h-full object-cover">
+            <span class="absolute top-3 left-3 bg-amber-500 text-slate-950 font-semibold text-xs px-2.5 py-1 rounded-full">${g.awardType}</span>
+            <div class="admin-only absolute top-3 right-3 gap-1">
+              <button type="button" onclick="openItemModal('congratulations', ${i})" class="bg-amber-400 text-slate-900 px-2 py-1 rounded-lg text-xs font-semibold">แก้ไข</button>
+              <button type="button" onclick="delItem('congratulations', ${i})" class="bg-red-600 text-white px-2 py-1 rounded-lg text-xs">ลบ</button>
+            </div>
+          </div>
+          <div class="p-5 flex-1 flex flex-col">
+            <p class="text-xs text-amber-700 font-semibold">${g.personName}</p>
+            <h3 class="font-bold text-base text-[#0f294a] mt-1 line-clamp-2">${g.title}</h3>
+            <p class="text-sm text-slate-600 mt-2 line-clamp-2 flex-1">${g.detail}</p>
+            <button type="button" onclick='openReader(${JSON.stringify(g.awardType)}, ${JSON.stringify(g.title)}, ${JSON.stringify(g.personName + " | " + g.date)}, ${JSON.stringify(g.detail)}, ${JSON.stringify(g.imageUrl)})' class="mt-3 text-amber-700 text-xs font-semibold text-left">อ่านรายละเอียด →</button>
+          </div>
+        </div>
+      `).join('');
+
+      document.getElementById('news-grid').innerHTML = siteData.news.map((n, i) => `
+        <div class="bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden shadow-sm flex flex-col">
+          <div class="relative h-44 bg-slate-200">
+            <img src="${n.imageUrl}" class="w-full h-full object-cover">
+            <span class="absolute top-3 left-3 bg-red-600 text-white text-xs px-2.5 py-1 rounded-lg">${n.type}</span>
+            <div class="admin-only absolute top-3 right-3 gap-1">
+              <button type="button" onclick="openItemModal('news', ${i})" class="bg-amber-400 text-slate-900 px-2 py-1 rounded-lg text-xs font-semibold">แก้ไข</button>
+              <button type="button" onclick="delItem('news', ${i})" class="bg-red-600 text-white px-2 py-1 rounded-lg text-xs">ลบ</button>
+            </div>
+          </div>
+          <div class="p-5 flex-1 flex flex-col">
+            <p class="text-xs text-slate-400">${n.date}</p>
+            <h3 class="font-bold text-base text-[#0f294a] mt-1 line-clamp-2">${n.title}</h3>
+            <p class="text-sm text-slate-600 mt-2 line-clamp-2 flex-1">${n.summary}</p>
+            <button type="button" onclick='openReader(${JSON.stringify(n.type)}, ${JSON.stringify(n.title)}, ${JSON.stringify(n.date)}, ${JSON.stringify(n.detail)}, ${JSON.stringify(n.imageUrl)})' class="mt-3 text-sky-700 text-xs font-semibold text-left">อ่านประกาศฉบับเต็ม →</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function saveAllToSheet(silent) {
+      const btn = document.getElementById('btn-save-all');
+      if (btn) btn.textContent = '⏳ กำลังบันทึก...';
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'saveAll',
+            password: sessionPassword,
+            data: siteData
+          })
+        });
+        const json = await res.json();
+        if (!silent) {
+          alert(json.status === 'success' ? 'บันทึกข้อมูลทั้งหมดลง Google Sheets เรียบร้อยแล้ว!' : 'เกิดข้อผิดพลาด: ' + json.message);
+        }
+      } catch (e) {
+        if (!silent) alert('บันทึกไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต');
+      } finally {
+        if (btn) btn.textContent = '💾 บันทึกลงชีต';
+      }
+    }
+  </script>
+</body>
+</html>
